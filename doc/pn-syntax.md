@@ -11,20 +11,20 @@ Then a file contains entries for tokens, places, transitions, and arcs.
 
 (*) Just a list of names
 
-token token1 token2 token3 
+token token1 token2 token3
 
 (** Places **)
 
-(*) Just a name followed by its initial marking, 
+(*) Just a name followed by its initial marking,
 (*) which may be empty but it has to appear.
 
 place name [token1 token3]
 
-(*) many places can be declared in one line 
+(*) many places can be declared in one line
 (*) the initial marking is required
 place name1[] name2[] name3[token1 token2^3]
 
-(*) note: the notation "^n" where n is a natural number, 
+(*) note: the notation "^n" where n is a natural number,
 (*) means that we have n copies of a token.
 
 (** Transitions **)
@@ -40,7 +40,7 @@ transition name1 name2 name3
 name>->name[token1 token2^3]
 
 (*) finally we can specify a complete arch in the following way:
-name>->name[token1]>->name[token]
+name>->name[token1]>->name[token]...
 ```
 
 Note that arcs never relate places to places or transitions to transitions. When an arc relates a place to a transition the token multiset is the required tokens to activate the transition, and in the converse situation the resulting tokens.
