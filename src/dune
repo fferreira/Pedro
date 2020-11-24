@@ -1,0 +1,9 @@
+(executables
+ (names pn)
+ (libraries ocamlgraph))
+
+(install
+ (section bin)
+ (files
+  (pn.exe as pn))
+ (package pedro))
