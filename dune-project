@@ -22,3 +22,4 @@
  (description
    "Some Petri net programs...")
 )
+(using menhir 2.0)

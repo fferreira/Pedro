@@ -31,9 +31,6 @@ module Label =
 
 module PersistentPN = Persistent.Digraph.AbstractLabeled(Node)(Label)
 
-
-
-
 module PN = Imperative.Digraph.AbstractLabeled(Node)(Label)
 
 

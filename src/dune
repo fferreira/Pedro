@@ -2,6 +2,13 @@
  (names pn)
  (libraries ocamlgraph))
 
+(ocamllex
+  (modules lexer))
+
+(menhir
+  (modules parser)
+  (flags "--explain"))
+
 (install
  (section bin)
  (files
