@@ -1,10 +1,10 @@
 
 type name = string
 
-type token = TokenMult of name * int
+type tkn = TokenMult of name * int
 
 type expr
   = Token of name
-  | Place of name * token list
+  | Place of name * tkn list
   | Transition of name
-  | Arc of name * name * token list
+  | Arc of name * name * tkn list

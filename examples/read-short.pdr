@@ -1,11 +1,11 @@
 (*) a short(er) version of read.pdr
 
-token A B s
+token A B s.
 
-place 0[A s] 1[B^1] 2[]
+place p0 [A s] p1[B^1] p2[].
 
-transition !A ?B
+transition !A ?B.
 
-0>->!A[A s]>->2[A s]>->?A[B s]>->2[B]
+0>->!A[A s]>->2[A s]>->?A[B s]>->2[B].
 
-?A>->0[s]
+?A>->0[s].

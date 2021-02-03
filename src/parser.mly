@@ -1,8 +1,8 @@
 %token EOI
 
-%token TOKEN PLACE TRANSITION ARC
+%token TOKEN PLACE TRANSITION ARROW
 
-%token SQLEFT SQRIGHT EXP
+%token SQLEFT SQRIGHT EXP PERIOD
 
 %token <int>MULTIPLICITY
 %token <string>NAME
@@ -19,16 +19,16 @@ let petri_net := ess = exprs+ ; EOI ; { List.concat ess }
 
 
 let exprs :=
-  | TOKEN ; nms = NAME+ ; { List.map (fun x -> Token x) nms }
-  | TRANSITION ; nms = NAME+ ; { List.map (fun x -> Token x) nms }
-  | PLACE ; pcs = place+ ; < >
-  | arcs = arc+ ; < >
+  | TOKEN ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token x) nms }
+  | TRANSITION ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token x) nms }
+  | PLACE ; pcs = place+ ; PERIOD ; < >
+  | arcs = arc ; PERIOD ; < >
 
 let place :=
   | nm = NAME ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
 
 let arc :=
-  | nm = NAME ; ARC ; NAME ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
+  | nm = NAME ; ARROW ; NAME ; SQLEFT ; tks = token* ; SQRIGHT ; arc? ;  { [Place (nm, tks)] }
 
 let token :=
   | nm = NAME ; EXP ; n = MULTIPLICITY ; < TokenMult >

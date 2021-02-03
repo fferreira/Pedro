@@ -10,12 +10,14 @@
 let underscore = '_' (* perhaps we could remove this *)
 let prime = '\''
 let letter = ['a'-'z' 'A'-'Z']
+let bang = '!'
+let qmark = '?'
 
-let symbol = ['{' '}' '(' ')' '[' ']' ':' '/' '\\' '.' '#''&' '?' '!' '_' '\'' '|' ',' '=' '>' '<' '+' '-' '*']
 let digit = ['0'-'9']
 
 
-let identifier = (letter|underscore)(letter|digit|underscore|prime)*
+(* let identifier = (letter|underscore)(letter|digit|underscore|prime|bang|qmark)* *)
+let identifier = (letter|digit|underscore|prime|bang|qmark)+
 
 let int_literal = digit+
 
@@ -42,16 +44,17 @@ and token = parse
 | "(*" { block_comment 1 lexbuf }
 
 (* symbolic literals *)
-| '[' { SQRIGHT }
-| ']' { SQLEFT }
+| '[' { SQLEFT }
+| ']' { SQRIGHT }
 | '^' { EXP }
+| '.' { PERIOD }
 
 (* keywords *)
 
 | "token" { TOKEN }
 | "place" { PLACE }
 | "transition" { TRANSITION }
-| ">->" { ARC }
+| ">->" { ARROW }
 
 
 (* other *)
@@ -59,7 +62,7 @@ and token = parse
     { EOI }
 | identifier as str { NAME str }
 
-| int_literal as num { MULTIPLICITY num }
+| int_literal as num { MULTIPLICITY (int_of_string num) }
 
 | string_literal as str { NAME str }
 
