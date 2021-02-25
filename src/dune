@@ -1,5 +1,5 @@
 (executables
- (names pn)
+ (names pedro)
  (libraries ocamlgraph))
 
 (ocamllex
@@ -12,5 +12,5 @@
 (install
  (section bin)
  (files
-  (pn.exe as pn))
+  (pedro.exe as pedro))
  (package pedro))

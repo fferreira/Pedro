@@ -3,6 +3,8 @@ type name = string
 
 type entity_marking = (name * int) list (* a list of names with multiplicity *)
 
+type dir = PlaceToTransition | TransitionToPlace
+
 type expr
   = Token of name * name (* token name and its sort *)
   | Place of name * entity_marking
@@ -17,7 +19,7 @@ type net =
   { tokens : (name * name) list
   ; places : (name * entity_marking) list
   ; transitions : name list
-  ; arcs : (name * name * entity_marking) list
+  ; arcs : (name * name * dir * entity_marking) list
   }
 
 let empty_net =
@@ -100,9 +102,9 @@ module Scoped =
       let* st = get in
       set {st with arcs}
 
-    let add_arc src dst tks =
+    let add_arc src dst d tks =
       let* ctx = get_arcs in
-      (src, dst, tks):: ctx |> set_arcs
+      (src, dst, d, tks):: ctx |> set_arcs
   end
 
 module Monadic =
@@ -152,12 +154,12 @@ module Monadic =
          let* src_trans = exists_transition src in
          if src_place then
            let* et = exists_transition dst in
-           if et then add_arc src dst tks
+           if et then add_arc src dst PlaceToTransition tks
            else dst ^ " is not a transition!" |> fail
          else
            if src_trans then
              let* ep = exists_place dst in
-             if ep then add_arc src dst tks
+             if ep then add_arc src dst TransitionToPlace tks
              else dst ^ " is not a place!" |> fail
            else
              src ^ " is neither a place nor a transition." |> fail

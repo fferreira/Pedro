@@ -1,78 +1,100 @@
 open Graph
+open Syntax
 
-type name = string
+(* type name = string
+ *
+ * type token = Token of name * int (\* a token has a name and a multiplicity *\) *)
 
-type token = Token of name * int (* a token has a name and a multiplicity *)
-
-type node = Place of name * token list
+type node = Place of name
           | Transition of name
 
 (* if the label is to a transition it is the tokens it needs to
    trigger or if it is from a transition it is the tokens it provides
    *)
-type label = token list
+(* type label = token list *)
 
 module Node =
   struct
     type t = node
+
+    let equal = (=)
+    let hash = Hashtbl.hash
+    let compare = compare
   end
 
 module Label =
   struct
-    type t = label
+    type t = entity_marking
 
     let default = []
 
-    (* perhaps we want a better comparison
-       (labels are name multisets)
-     *)
+    (* This comparison is broken because the lists are not ordered *)
     let compare l1 l2 = if List.for_all2 (=) l1 l2 then 0 else 1
   end
 
-module PersistentPN = Persistent.Digraph.AbstractLabeled(Node)(Label)
+module PPN = Persistent.Digraph.ConcreteLabeled(Node)(Label)
 
-module PN = Imperative.Digraph.AbstractLabeled(Node)(Label)
+(* module PN = Imperative.Digraph.AbstractLabeled(Node)(Label) *)
+
+(* markings *)
+module PNMark = Map.Make(String) (* relates the node mark (which is an name/string) with the mark *)
+
+let _ = Parsing.peek_val (* just for the compilation of this file *)
 
 
-type mark = token list
-module PNMark = Map.Make(Int) (* relates the node mark (which is an integer) with the mark *)
+(* Generating graphs from the nets produced by pedro expressions *)
 
-let _ = Parsing.peek_val
+let generate_ppn (n : net) : PPN.t =
+  let start = PPN.empty in
+  let rec add (arcs : (name * name * dir * entity_marking) list) g =
+    match arcs with
+    | (src, dst, dir, tks)::rest ->
+       begin match dir with
+       | PlaceToTransition ->
+          add rest (PPN.add_edge_e g (Place src, tks, Transition dst))
+       | TransitionToPlace ->
+          add rest (PPN.add_edge_e g (Transition src, tks, Place dst))
+       end
+    | [] -> g
+  in
+  add n.arcs start
 
+module Display = struct
+  include PPN
 
-let show_position pos =
-  Printf.sprintf "%d:%d" pos.Lexing.pos_lnum
-    (pos.Lexing.pos_cnum - pos.Lexing.pos_bol + 1)
+  let vertex_name = function
+  | Place nm -> "\"" ^ nm ^ "\""
+  | Transition nm -> "\"" ^ nm ^ "\""
 
-let show_source_loc (startp, endp) : string =
-  Printf.sprintf "%s to %s in: %s" (show_position startp) (show_position endp)
-    startp.Lexing.pos_fname
+  let graph_attributes _ = [`Rankdir `LeftToRight]
 
-let set_filename (fname : string) (lexbuf : Lexing.lexbuf) =
-  lexbuf.Lexing.lex_curr_p <-
-    {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname= fname} ;
-  lexbuf
+  let default_vertex_attributes _ = []
 
-let parse_from_lexbuf lexbuf =
-  try Parser.petri_net Lexer.token lexbuf with
-  | Lexer.LexError msg -> failwith msg
-  | Parser.Error ->
-      let err_interval =
-        (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)
-      in
-      failwith @@ "Parse error: " ^ show_source_loc err_interval
-  | e -> failwith @@ "Found a problem: " ^ Printexc.to_string_default e
+  let vertex_attributes = function
+    | Place _nm -> [`Shape `Circle]
+    | Transition _nm -> [`Shape `Box]
 
-let parse fname (ch : in_channel) =
-  let lexbuf = set_filename fname (Lexing.from_channel ch) in
-  parse_from_lexbuf lexbuf
+  let default_edge_attributes _ = []
 
-let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
+  let edge_attributes (_, a, _) =
+    let rec render_attr = function
+      | (nm, n) :: rest ->
+         if n > 1 then
+           nm ^ "^" ^ string_of_int n ^ " " ^ render_attr rest
+         else
+           nm ^ " " ^ render_attr rest
+      | [] -> ""
+    in
+    [`Label (render_attr a)]
 
-let () = print_endline "Vote for Pedro!" ;
-         print_endline @@ "Current working directory: " ^ Sys.getcwd ()  ;
-         let fn = "examples/read.pdr" in
-         let exprs = parse fn (Stdlib.open_in fn) in
-         match Syntax.validate_net exprs with
-         | Monad.Yes _ -> print_endline "Alles gut!"
-         | Monad.No err -> "Alles kaput!: " ^ err |> print_endline
+  let get_subgraph _ = None
+end
+
+module DotOutput = Graphviz.Dot (Display)
+
+let generate_dot g =
+  let buffer = Buffer.create 4196 in
+  let formatter = Format.formatter_of_buffer buffer in
+  DotOutput.fprint_graph formatter g ;
+  Format.pp_print_flush formatter () ;
+  Buffer.contents buffer
