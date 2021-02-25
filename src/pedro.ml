@@ -29,10 +29,16 @@ let parse fname (ch : in_channel) =
 
 let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 
-let () = print_endline "Vote for Pedro!" ;
-         print_endline @@ "Current working directory: " ^ Sys.getcwd ()  ;
-         let fn = "examples/read.pdr" in
+let () = print_endline "//Vote for Pedro!" ;
+         print_endline @@ "//Current working directory: " ^ Sys.getcwd ()  ;
+         let fn =
+           if Array.length Sys.argv = 2 then
+             Sys.argv.(1)
+           else
+             "examples/read.pdr"
+         in
+         print_endline @@ "//Reading: " ^ fn ;
          let exprs = parse fn (Stdlib.open_in fn) in
          match Syntax.validate_net exprs with
          | Monad.Yes net -> let s = Pn.generate_ppn net |> Pn.generate_dot in print_endline s
-         | Monad.No err -> "Alles kaput!: " ^ err |> print_endline
+         | Monad.No err -> "//Alles kaput!: " ^ err |> print_endline
