@@ -46,6 +46,7 @@ and token = parse
 | ']' { SQRIGHT }
 | '^' { EXP }
 | '.' { PERIOD }
+| ':' { COLON }
 
 (* keywords *)
 

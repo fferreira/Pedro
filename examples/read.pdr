@@ -2,8 +2,9 @@
 
 token A B. (*) tokens for the two roles
 
+token s:msg. (*) synchronization token
 
-token s. (*) synchronization token
+token:msg s1 s2. (*) more tokens
 
 place '0[A s] '1[B] '2[].
 

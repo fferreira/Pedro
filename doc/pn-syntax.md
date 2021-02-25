@@ -9,9 +9,12 @@ Then a file contains entries for tokens, places, transitions, and arcs. Each ent
 ```
 (** Tokens **)
 
-(*) Just a list of names
+(*) Tokens declare a name in a sort.
 
-token token1 token2 token3.
+token token1:sort1 token2. (* Here token1 is of sort1, while if we omit the sort then the token has the same sort as its name *)
+(*) the previous line declares token1 of sort sort1 and token2 of sort token2.
+
+token:msg m1 m2 m3 m4. (* if we specify the sort at the beginning all the tokens get that sort *)
 
 (** Places **)
 

@@ -2,7 +2,7 @@
 
 %token TOKEN PLACE TRANSITION ARROW
 
-%token SQLEFT SQRIGHT EXP PERIOD
+%token SQLEFT SQRIGHT EXP PERIOD COLON
 
 %token <int>MULTIPLICITY
 %token <string>NAME
@@ -19,6 +19,10 @@ match arc_conts with
 | (nm', tks)::rest -> Arc (nm, nm', tks) :: build_arcs nm' rest
 | [] -> []
 
+let token_with_optional_sort nm = function
+| Some sort -> Token (nm, sort)
+| None -> Token (nm, nm) (* the sort has the same name as the token *)
+
 %}
 
 %start <expr list> petri_net
@@ -28,8 +32,9 @@ match arc_conts with
 let petri_net := ess = exprs+ ; EOI ; { List.concat ess }
 
 let exprs :=
-  | TOKEN ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token x) nms }
-  | TRANSITION ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token x) nms }
+  | TOKEN ; COLON ; sort = NAME ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token (x, sort)) nms }
+  | TOKEN ; tks = token_with_sort+ ; PERIOD ; < >
+  | TRANSITION ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Transition x) nms }
   | PLACE ; pcs = place+ ; PERIOD ; < >
   | arcs = arc ; PERIOD ; < >
 
@@ -44,3 +49,8 @@ let arc :=
 let token :=
   | nm = NAME ; EXP ; n = MULTIPLICITY ; < TokenMult >
   | nm = NAME ; { TokenMult (nm, 1) }
+
+let token_with_sort :=
+  | nm = NAME ; s = sort_decl? ; { token_with_optional_sort nm s }
+
+let sort_decl := COLON ; sort = NAME ; < >
