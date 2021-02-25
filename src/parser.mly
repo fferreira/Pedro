@@ -47,8 +47,8 @@ let arc :=
   | nm = NAME ; ac = arc_continuation ;  { build_arcs nm ac }
 
 let token :=
-  | nm = NAME ; EXP ; n = MULTIPLICITY ; < TokenMult >
-  | nm = NAME ; { TokenMult (nm, 1) }
+  | nm = NAME ; EXP ; n = MULTIPLICITY ; < >
+  | nm = NAME ; { (nm, 1) }
 
 let token_with_sort :=
   | nm = NAME ; s = sort_decl? ; { token_with_optional_sort nm s }

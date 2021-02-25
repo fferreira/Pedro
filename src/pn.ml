@@ -72,5 +72,7 @@ let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 let () = print_endline "Vote for Pedro!" ;
          print_endline @@ "Current working directory: " ^ Sys.getcwd ()  ;
          let fn = "examples/read.pdr" in
-         let _ = parse fn (Stdlib.open_in fn) in
-         ()
+         let exprs = parse fn (Stdlib.open_in fn) in
+         match Syntax.validate_net exprs with
+         | Monad.Yes _ -> print_endline "Alles gut!"
+         | Monad.No err -> "Alles kaput!: " ^ err |> print_endline

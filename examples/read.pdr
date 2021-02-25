@@ -8,7 +8,7 @@ token:msg s1 s2. (*) more tokens
 
 place '0[A s] '1[B] '2[].
 
-transition !A ?B "A->B<m>".
+transition !A "?A" ?B "A->B<m>".
 
 (*) these arcs represent the enqueuing of the s, and the dequeueing of the value
 '0>->!A[A s]>->'2[]>->?A[B s]>->'2[B].
