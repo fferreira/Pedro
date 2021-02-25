@@ -69,10 +69,8 @@ let parse fname (ch : in_channel) =
 
 let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 
-
-
 let () = print_endline "Vote for Pedro!" ;
          print_endline @@ "Current working directory: " ^ Sys.getcwd ()  ;
-         let fn = "examples/read-short.pdr" in
+         let fn = "examples/read.pdr" in
          let _ = parse fn (Stdlib.open_in fn) in
          ()
