@@ -60,7 +60,7 @@ let parse_from_lexbuf lexbuf =
       let err_interval =
         (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)
       in
-      failwith @@ "gusto: " ^ show_source_loc err_interval
+      failwith @@ "Parse error: " ^ show_source_loc err_interval
       (* uerr (ParserError (build err_interval)) *)
   (* | e -> Err.Violation ("Found a problem:" ^ Exn.to_string e) |> raise *)
   | e -> failwith @@ "Found a problem: " ^ Printexc.to_string_default e

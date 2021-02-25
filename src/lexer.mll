@@ -15,9 +15,7 @@ let qmark = '?'
 
 let digit = ['0'-'9']
 
-
-(* let identifier = (letter|underscore)(letter|digit|underscore|prime|bang|qmark)* *)
-let identifier = (letter|digit|underscore|prime|bang|qmark)+
+let identifier = (letter|underscore|bang|prime|qmark)(letter|digit|underscore|prime|bang|qmark)*
 
 let int_literal = digit+
 
@@ -60,6 +58,7 @@ and token = parse
 (* other *)
 | eof
     { EOI }
+
 | identifier as str { NAME str }
 
 | int_literal as num { MULTIPLICITY (int_of_string num) }

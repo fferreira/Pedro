@@ -27,8 +27,10 @@ let exprs :=
 let place :=
   | nm = NAME ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
 
+let arc_continuation :=
+  ARROW ; NAME ; SQLEFT ; tks = token* ; SQRIGHT ; arc_continuation? ;  { tks }
 let arc :=
-  | nm = NAME ; ARROW ; NAME ; SQLEFT ; tks = token* ; SQRIGHT ; arc? ;  { [Place (nm, tks)] }
+  | nm = NAME ; tks = arc_continuation ;  { [Place (nm, tks)] }
 
 let token :=
   | nm = NAME ; EXP ; n = MULTIPLICITY ; < TokenMult >
