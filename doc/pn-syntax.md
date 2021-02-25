@@ -1,10 +1,16 @@
 # Proposal for the syntax of Pedro files
 
 
-Line comments start with `(*)` and block comments are surrounded by `(* ... *)`
+Line comments start with `(*)` and block comments are surrounded by
+`(* ... *)`
 
-Then a file contains entries for tokens, places, transitions, and arcs. Each entry is terminated by a full stop (.).
+Then a file contains entries for tokens, places, transitions, and
+arcs. Each entry is terminated by a full stop (.).
 
+The lexical structure of names is not yet finalised, however a name is
+a sequence of letters, numbers and some symbols, if you need to have
+more symbols accepted you can use double quotes to get names with more
+symbols (see the example further down).
 
 ```
 (** Tokens **)
@@ -36,6 +42,9 @@ place name1[] name2[] name3[token1 token2^3].
 (** Transitions **)
 
 transition name1 name2 name3.
+
+(* transition A->B<m>. (*) would not be accepted *)
+transition "A->B<m>". (*) use double quotes to accept more characters.
 
 (*) Transitions simply have a label for now
 
