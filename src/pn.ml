@@ -54,15 +54,13 @@ let set_filename (fname : string) (lexbuf : Lexing.lexbuf) =
   lexbuf
 
 let parse_from_lexbuf lexbuf =
-  try Parser.petri_net Lexer.token (*assert false*) lexbuf with
+  try Parser.petri_net Lexer.token lexbuf with
   | Lexer.LexError msg -> failwith msg
   | Parser.Error ->
       let err_interval =
         (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)
       in
       failwith @@ "Parse error: " ^ show_source_loc err_interval
-      (* uerr (ParserError (build err_interval)) *)
-  (* | e -> Err.Violation ("Found a problem:" ^ Exn.to_string e) |> raise *)
   | e -> failwith @@ "Found a problem: " ^ Printexc.to_string_default e
 
 let parse fname (ch : in_channel) =
