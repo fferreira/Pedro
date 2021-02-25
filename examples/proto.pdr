@@ -1,0 +1,18 @@
+(* this implements example 6' in the EGTAPN.pdf notes *)
+
+token P Q.
+
+token:msg m1 m2.
+
+place "0"[P] "1"[Q] "2"[] "3"[] "4"[Q] "5"[].
+
+transition "P!Q<m1>" "P!Q<m2>" "Q?P<m1>" "Q?P<m2>".
+
+"0">->"P!Q<m1>"[P]>->"1"[P]>->"Q?P<m1>"[Q]>->"2"[Q].
+
+"P!Q<m1>">->"3"[m1]>->"Q?P<m1>"[m1].
+
+"P!Q<m2>">->"3"[m2]>->"Q?P<m2>"[m2].
+
+
+"0">->"P!Q<m2>"[P]>->"4"[P]>-> "Q?P<m2>"[Q]>->"5"[Q].

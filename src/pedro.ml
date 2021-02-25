@@ -35,7 +35,7 @@ let () = print_endline "//Vote for Pedro!" ;
            if Array.length Sys.argv = 2 then
              Sys.argv.(1)
            else
-             "examples/read.pdr"
+             "examples/proto.pdr"
          in
          print_endline @@ "//Reading: " ^ fn ;
          let exprs = parse fn (Stdlib.open_in fn) in
