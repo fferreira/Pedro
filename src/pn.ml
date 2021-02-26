@@ -6,7 +6,7 @@ open Syntax
  * type token = Token of name * int (\* a token has a name and a multiplicity *\) *)
 
 type node = Place of name
-          | Transition of name
+          | Transition of name * vis
 
 (* if the label is to a transition it is the tokens it needs to
    trigger or if it is from a transition it is the tokens it provides
@@ -51,9 +51,11 @@ let generate_ppn (n : net) : PPN.t =
     | (src, dst, dir, tks)::rest ->
        begin match dir with
        | PlaceToTransition ->
-          add rest (PPN.add_edge_e g (Place src, tks, Transition dst))
+          let vis = List.assoc dst n.transitions in (* this should not fail for well formed nets *)
+          add rest (PPN.add_edge_e g (Place src, tks, Transition (dst, vis)))
        | TransitionToPlace ->
-          add rest (PPN.add_edge_e g (Transition src, tks, Place dst))
+          let vis = List.assoc src n.transitions in (* this should not fail for well formed nets *)
+          add rest (PPN.add_edge_e g (Transition (src, vis), tks, Place dst))
        end
     | [] -> g
   in
@@ -64,15 +66,16 @@ module Display = struct
 
   let vertex_name = function
   | Place nm -> "\"" ^ nm ^ "\""
-  | Transition nm -> "\"" ^ nm ^ "\""
+  | Transition (nm, Labelled) -> "\"" ^ nm ^ "\""
+  | Transition (_, Silent) -> ""
 
   let graph_attributes _ = [`Rankdir `LeftToRight]
 
   let default_vertex_attributes _ = []
 
   let vertex_attributes = function
-    | Place _nm -> [`Shape `Circle]
-    | Transition _nm -> [`Shape `Box]
+    | Place _ -> [`Shape `Circle]
+    | Transition _ -> [`Shape `Box]
 
   let default_edge_attributes _ = []
 

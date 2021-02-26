@@ -5,10 +5,12 @@ type entity_marking = (name * int) list (* a list of names with multiplicity *)
 
 type dir = PlaceToTransition | TransitionToPlace
 
+type vis = Silent | Labelled
+
 type expr
   = Token of name * name (* token name and its sort *)
   | Place of name * entity_marking
-  | Transition of name
+  | Transition of name * vis
   | Arc of name * name * entity_marking
 
 (* check the scope of pedro expressions *)
@@ -18,7 +20,7 @@ type expr
 type net =
   { tokens : (name * name) list
   ; places : (name * entity_marking) list
-  ; transitions : name list
+  ; transitions : (name * vis) list
   ; arcs : (name * name * dir * entity_marking) list
   }
 
@@ -88,11 +90,11 @@ module Scoped =
 
     let exists_transition x : bool t =
       let* trs = get_transitions in
-      List.exists ((=) x) trs |> return
+      List.exists (fun (nm, _) -> nm = x) trs |> return
 
-    let add_transition nm  =
+    let add_transition tr  =
       let* ctx = get_transitions in
-      nm :: ctx |> set_transitions
+      tr :: ctx |> set_transitions
 
     let get_arcs =
       let* st = get in
@@ -140,11 +142,11 @@ module Monadic =
            let* _ = validate_tkn_list tks in
            add_place nm tks
 
-      | Transition nm ->
+      | Transition (nm, vis) ->
          let* ex = exists_transition nm in
          if ex then
            "Transition: " ^ nm ^ " defined more than once" |> fail
-         else add_transition nm
+         else add_transition (nm, vis)
 
       | Arc (src, dst, tks) ->
          let*  _ = validate_tkn_list tks in

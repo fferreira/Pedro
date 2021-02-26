@@ -41,12 +41,12 @@ place name1[] name2[] name3[token1 token2^3].
 
 (** Transitions **)
 
-transition name1 name2 name3.
+transition name1 name2 (name3).
 
 (* transition A->B<m>. (*) would not be accepted *)
 transition "A->B<m>". (*) use double quotes to accept more characters.
 
-(*) Transitions simply have a label for now
+(*) Silent transitions have their names surrounded by parenthesis.
 
 (** Arc **)
 

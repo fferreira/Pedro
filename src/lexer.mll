@@ -44,6 +44,8 @@ and token = parse
 (* symbolic literals *)
 | '[' { SQLEFT }
 | ']' { SQRIGHT }
+| '(' { LPARENS }
+| ')' { RPARENS }
 | '^' { EXP }
 | '.' { PERIOD }
 | ':' { COLON }
