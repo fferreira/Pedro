@@ -1,3 +1,4 @@
+open Sexplib
 
 type name = string
 
@@ -179,3 +180,78 @@ let validate_net
   match res with
   | Monad.Yes _ -> Yes n'
   | Monad.No s -> No s
+
+let sexp_of_net (pn : net) : Sexp.t =
+  let sexp_of_markings markings =
+    Sexp.List (
+      List.map (
+        fun (name, mult) ->
+          Sexp.List [Sexp.Atom name; Sexp.Atom (Int.to_string mult)]
+      ) markings
+    )
+  in
+  let tokens =
+    let tokens = pn.tokens in
+    let tokens = List.map (fun (token_name, kind) ->
+      Sexp.List
+      [ Sexp.Atom "token"
+      ; Sexp.Atom token_name
+      ; Sexp.Atom kind
+      ]
+    ) tokens
+    in
+    Sexp.List (Sexp.Atom "tokens" :: tokens)
+  in
+  let places =
+    let places = pn.places in
+    let places = List.map (fun (place_name, markings) ->
+      Sexp.List
+      [ Sexp.Atom "place"
+      ; Sexp.Atom place_name
+      ; sexp_of_markings markings
+      ]
+      ) places
+    in
+    Sexp.List (Sexp.Atom "places" :: places)
+  in
+  let transitions =
+    let transitions = pn.transitions in
+    let transitions = List.map (fun (trn_name, vis) ->
+      let vis = match vis with
+        | Silent -> Sexp.Atom "silent"
+        | Labelled -> Sexp.Atom "labelled"
+      in
+      Sexp.List
+      [ Sexp.Atom "transition"
+      ; Sexp.Atom trn_name
+      ; vis
+      ]
+      ) transitions
+    in
+    Sexp.List (Sexp.Atom "transitions" :: transitions)
+  in
+  let arcs =
+    let arcs = pn.arcs in
+    let arcs = List.map (fun (frm, dst, dir, markings) ->
+      let dir = match dir with
+        | PlaceToTransition -> Sexp.Atom "place-to-transition"
+        | TransitionToPlace -> Sexp.Atom "transition-to-place"
+      in
+      Sexp.List
+      [ Sexp.Atom "arc"
+      ; Sexp.Atom frm
+      ; Sexp.Atom dst
+      ; dir
+      ; sexp_of_markings markings
+      ]
+      ) arcs
+    in
+    Sexp.List (Sexp.Atom "arcs" :: arcs)
+  in
+  Sexp.List [
+    Sexp.Atom "petri-net"
+  ; tokens
+  ; places
+  ; transitions
+  ; arcs
+  ]

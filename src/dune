@@ -1,6 +1,6 @@
 (executables
  (names pedro)
- (libraries ocamlgraph))
+ (libraries ocamlgraph sexplib))
 
 (ocamllex
   (modules lexer))
