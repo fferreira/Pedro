@@ -41,4 +41,4 @@ let () = print_endline "//Vote for Pedro!" ;
          let exprs = parse fn (Stdlib.open_in fn) in
          match Syntax.validate_net exprs with
          | Monad.Yes net -> let s = Pn.generate_ppn net |> Pn.generate_dot in print_endline s
-         | Monad.No err -> "//Alles kaput!: " ^ err |> print_endline
+         | Monad.No err -> "//Alles kaputt!: " ^ err |> print_endline
