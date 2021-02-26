@@ -21,7 +21,7 @@ let parse_from_lexbuf lexbuf =
         (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf)
       in
       failwith @@ "Parse error: " ^ show_source_loc err_interval
-  | e -> failwith @@ "Found a problem: " ^ Printexc.to_string_default e
+  | e -> failwith @@ "Found a problem: " ^ Printexc.to_string e
 
 let parse fname (ch : in_channel) =
   let lexbuf = set_filename fname (Lexing.from_channel ch) in
