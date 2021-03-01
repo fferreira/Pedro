@@ -6,6 +6,7 @@
 
 %token <int>MULTIPLICITY
 %token <string>NAME
+%token <string>QNAME
 
 %{
     open Syntax
@@ -32,30 +33,34 @@ let token_with_optional_sort nm = function
 let petri_net := ess = exprs+ ; EOI ; { List.concat ess }
 
 let exprs :=
-  | TOKEN ; COLON ; sort = NAME ; nms = NAME+ ; PERIOD ; { List.map (fun x -> Token (x, sort)) nms }
+  | TOKEN ; COLON ; sort = name ; nms = name+ ; PERIOD ; { List.map (fun x -> Token (x, sort)) nms }
   | TOKEN ; tks = token_with_sort+ ; PERIOD ; < >
   | TRANSITION ; trs = transition+ ; PERIOD ; { List.map (fun (x, y) -> Transition (x, y)) trs }
   | PLACE ; pcs = place+ ; PERIOD ; < >
   | arcs = arc ; PERIOD ; < >
 
 let transition :=
- | nm = NAME ; { (nm, Labelled) }
- | LPARENS ; nm = NAME ; RPARENS ; { (nm, Silent) }
+ | nm = name ; { (nm, Labelled) }
+ | LPARENS ; nm = name ; RPARENS ; { (nm, Silent) }
 
 
 let place :=
-  | nm = NAME ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
+  | nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
 
 let arc_continuation :=
-  ARROW ; nm = NAME ; SQLEFT ; tks = token* ; SQRIGHT ; arcs = arc_continuation? ;  { (nm, tks) :: rm_option_arc_cont arcs }
+  ARROW ; nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; arcs = arc_continuation? ;  { (nm, tks) :: rm_option_arc_cont arcs }
 let arc :=
-  | nm = NAME ; ac = arc_continuation ;  { build_arcs nm ac }
+  | nm = name ; ac = arc_continuation ;  { build_arcs nm ac }
 
 let token :=
-  | nm = NAME ; EXP ; n = MULTIPLICITY ; < >
-  | nm = NAME ; { (nm, 1) }
+  | nm = name ; EXP ; n = MULTIPLICITY ; < >
+  | nm = name ; { (nm, 1) }
 
 let token_with_sort :=
-  | nm = NAME ; s = sort_decl? ; { token_with_optional_sort nm s }
+  | nm = name ; s = sort_decl? ; { token_with_optional_sort nm s }
 
-let sort_decl := COLON ; sort = NAME ; < >
+let sort_decl := COLON ; sort = name ; < >
+
+let name :=
+  | nm = NAME ; <>
+  | nm = QNAME ; <>

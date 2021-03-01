@@ -66,7 +66,7 @@ and token = parse
 
 | int_literal as num { MULTIPLICITY (int_of_string num) }
 
-| string_literal as str { NAME (String.sub str 1 (String.length str - 2)) }
+| string_literal as str { QNAME (String.sub str 1 (String.length str - 2)) }
 
 | _ as unrecog {
   let offset = Lexing.lexeme_start lexbuf in

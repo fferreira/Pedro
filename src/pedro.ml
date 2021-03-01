@@ -41,6 +41,10 @@ let () = print_endline "//Vote for Pedro!" ;
          let exprs = parse fn (Stdlib.open_in fn) in
          match Syntax.validate_net exprs with
          | Monad.Yes net ->
-          let s = Pn.generate_ppn net |> Pn.generate_dot in print_endline s;
-          let s = Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum in print_endline s
+            print_endline "----Graphviz----" ;
+            Pn.generate_ppn net |> Pn.generate_dot |> print_endline ;
+            print_endline "----SExp----" ;
+            Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum |>print_endline ;
+            print_endline "----Pedro----" ;
+            Pretty.pp_expr_list exprs |> print_endline
          | Monad.No err -> "//Alles kaputt!: " ^ err |> print_endline
