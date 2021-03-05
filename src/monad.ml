@@ -11,9 +11,7 @@ module type MONAD = sig
   val map : ('a -> 'b t) -> 'a list -> 'b list t
 end
 
-type 'a res
-  = Yes of 'a
-  | No of string
+type 'a res = ('a, string) result
 
 module type READER = sig
   include MONAD
@@ -30,16 +28,16 @@ module Monad (* : MONAD *) =
   struct
     type 'a t = 'a res
 
-    let return x = Yes x
+    let return x = Ok x
 
     let bind = function
-      | Yes x -> fun f -> f x
-      | No err -> fun _ -> No err
+      | Ok x -> fun f -> f x
+      | Error err -> fun _ -> Error err
 
     let (>>=) = bind
     let (let*) = bind
 
-    let fail err = No err
+    let fail err = Error err
 
     let rec map (f : ('a -> 'b t)) (l : 'a list) : 'b list t =
       match l with
@@ -59,23 +57,23 @@ module Reader ( Q : sig type r end ) (* : READER *) =
     let run = function
       | T r -> r
 
-    let return x = T (fun _ -> Yes x)
+    let return x = T (fun _ -> Ok x)
 
     let bind (m : 'a t) (f : 'a -> 'b t) : 'b t =
       T (fun env ->
           match run m env with
-          | Yes m' -> run (f m') env
-          | No err -> No err)
+          | Ok m' -> run (f m') env
+          | Error err -> Error err)
 
     let (>>=) = bind
 
     let (let*) = bind
 
-    let fail err = T (fun _ -> No err)
+    let fail err = T (fun _ -> Error err)
 
     let local f m = T (fun env -> run m (f env))
 
-    let ask = T (fun r -> Yes r)
+    let ask = T (fun r -> Ok r)
 
     let rec map (f : ('a -> 'b t)) (l : 'a list) : 'b list t =
       match l with
@@ -95,25 +93,25 @@ module State ( Q : sig type s end )  =
     let run = function
       | T r -> r
 
-    let return x = T (fun s -> s, Yes x)
+    let return x = T (fun s -> s, Ok x)
 
     let bind (m : 'a t) (f : 'a -> 'b t) : 'b t =
       T (fun s ->
           match run m s with
-          | s, Yes m' -> run (f m') s
-          | s, No err -> s, No err)
+          | s, Ok m' -> run (f m') s
+          | s, Error err -> s, Error err)
 
     let (>>=) = bind
 
     let (let*) = bind
 
-    let fail err = T (fun s -> s, No err)
+    let fail err = T (fun s -> s, Error err)
 
     let local f m = T (fun s -> let _, r = run m (f s) in s, r)
 
-    let get = T (fun s -> s, Yes s)
+    let get = T (fun s -> s, Ok s)
 
-    let set s = T (fun _ -> s, Yes ())
+    let set s = T (fun _ -> s, Ok ())
 
     let rec map (f : ('a -> 'b t)) (l : 'a list) : 'b list t =
       match l with
@@ -136,27 +134,27 @@ module ReaderState ( Q : sig type st type rd end )  =
     let run = function
       | T r -> r
 
-    let return x = T (fun (s, _) -> s, Yes x)
+    let return x = T (fun (s, _) -> s, Ok x)
 
     let bind (m : 'a t) (f : 'a -> 'b t) : 'b t =
       T (fun (s, r) ->
           match run m (s, r) with
-          | s', Yes m' ->run (f m') (s', r)
-          | s', No err -> s', No err)
+          | s', Ok m' ->run (f m') (s', r)
+          | s', Error err -> s', Error err)
 
     let (>>=) = bind
 
     let (let*) = bind
 
-    let fail err = T (fun (s, _) -> s, No err)
+    let fail err = T (fun (s, _) -> s, Error err)
 
     let local f m = T (fun (s, r) -> let s', r' = run m (s, f r) in s', r')
 
-    let ask = T (fun (s, r) -> s, Yes r)
+    let ask = T (fun (s, r) -> s, Ok r)
 
-    let get = T (fun (s, _) -> s, Yes s)
+    let get = T (fun (s, _) -> s, Ok s)
 
-    let set s = T (fun _ -> s, Yes ())
+    let set s = T (fun _ -> s, Ok ())
 
     let rec map (f : ('a -> 'b t)) (l : 'a list) : 'b list t =
       match l with

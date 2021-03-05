@@ -178,8 +178,8 @@ let validate_net
     : net Monad.res =
   let (n', res) = Scoped.run (Monadic.check es) empty_net in
   match res with
-  | Monad.Yes _ -> Yes n'
-  | Monad.No s -> No s
+  | Ok _ -> Ok n'
+  | Error s -> Error s
 
 let sexp_of_net (pn : net) : Sexp.t =
   let sexp_of_markings markings =
