@@ -2,9 +2,8 @@
 
 %token TOKEN PLACE TRANSITION ARROW
 
-%token SQLEFT SQRIGHT EXP PERIOD COLON LPARENS RPARENS
+%token SQLEFT SQRIGHT PERIOD COLON LPARENS RPARENS
 
-%token <int>MULTIPLICITY
 %token <string>NAME
 %token <string>QNAME
 
@@ -43,7 +42,6 @@ let transition :=
  | nm = name ; { (nm, Labelled) }
  | LPARENS ; nm = name ; RPARENS ; { (nm, Silent) }
 
-
 let place :=
   | nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }
 
@@ -53,8 +51,7 @@ let arc :=
   | nm = name ; ac = arc_continuation ;  { build_arcs nm ac }
 
 let token :=
-  | nm = name ; EXP ; n = MULTIPLICITY ; < >
-  | nm = name ; { (nm, 1) }
+  | nm = name ; < >
 
 let token_with_sort :=
   | nm = name ; s = sort_decl? ; { token_with_optional_sort nm s }

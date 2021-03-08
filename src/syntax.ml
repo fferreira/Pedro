@@ -1,32 +1,35 @@
 open Sexplib
 
 type name = string
+type sort = string
 
-type entity_marking = (name * int) list (* a list of names with multiplicity *)
+type token_queue = name list
+
+type entity_marking = (sort * token_queue) list (* a list of queues by sort *)
 
 type dir = PlaceToTransition | TransitionToPlace
 
 type vis = Silent | Labelled
 
 type expr
-  = Token of name * name (* token name and its sort *)
-  | Place of name * entity_marking
+  = Token of name * sort (* token name and its sort *)
+  | Place of name * token_queue
   | Transition of name * vis
-  | Arc of name * name * entity_marking
+  | Arc of name * name * token_queue
 
 (* check the scope of pedro expressions *)
 
-
-
 type net =
-  { tokens : (name * name) list
+  { sorts : sort list
+  ; tokens : (name * sort) list
   ; places : (name * entity_marking) list
   ; transitions : (name * vis) list
   ; arcs : (name * name * dir * entity_marking) list
   }
 
 let empty_net =
-  { tokens = []
+  { sorts = []
+  ; tokens = []
   ; places  = []
   ; transitions = []
   ; arcs = []
@@ -35,6 +38,18 @@ let empty_net =
 module Scoped =
   struct
     include Monad.State(struct type s = net end)
+
+    let get_sorts =
+      let* st = get in
+      return st.sorts
+
+    let set_sorts sorts =
+      let* st = get in
+      set {st with sorts}
+
+    let exists_sort x : bool t =
+      let* ctx = get_sorts in
+        List.mem x ctx |> return
 
     let get_tokens =
       let* st = get in
@@ -114,17 +129,17 @@ module Monadic =
   struct
     open Scoped
 
-    let validate_tkn_list (tl : entity_marking) : unit t =
-      let val_one (nm, n) =
-        let* te = exists_token nm in
-        if te && n > 0
-        then return ()
-        else
-          "Token: " ^ nm ^ " does not exist!" |> fail
-      in
-      let* _ = Scoped.map val_one tl in
-      return ()
-
+    let rec process_tkn_list : token_queue ->  entity_marking t = function
+      | nm::nms ->
+         let* sort = lookup_token nm in
+         let* rest = process_tkn_list nms in
+         begin match List.assoc_opt sort rest with
+         | None -> return @@ (sort, [nm]) :: rest
+         | Some queue ->
+            let rest' = List.remove_assoc sort rest in
+            return @@ (sort, List.append queue [nm]) :: rest'
+         end
+      | [] -> return []
 
     let check_expr (e : expr) : unit t =
       match e with
@@ -140,8 +155,8 @@ module Monadic =
          if ex then
            "Place: " ^ nm ^ " defined more than once" |> fail
          else
-           let* _ = validate_tkn_list tks in
-           add_place nm tks
+           let* tks' = process_tkn_list tks in
+           add_place nm tks'
 
       | Transition (nm, vis) ->
          let* ex = exists_transition nm in
@@ -150,19 +165,19 @@ module Monadic =
          else add_transition (nm, vis)
 
       | Arc (src, dst, tks) ->
-         let*  _ = validate_tkn_list tks in
+         let*  tks' = process_tkn_list tks in
 
          (* check if src and dst exist and if they are of different kind (place/transition) *)
          let* src_place = exists_place src in
          let* src_trans = exists_transition src in
          if src_place then
            let* et = exists_transition dst in
-           if et then add_arc src dst PlaceToTransition tks
+           if et then add_arc src dst PlaceToTransition tks'
            else dst ^ " is not a transition!" |> fail
          else
            if src_trans then
              let* ep = exists_place dst in
-             if ep then add_arc src dst TransitionToPlace tks
+             if ep then add_arc src dst TransitionToPlace tks'
              else dst ^ " is not a place!" |> fail
            else
              src ^ " is neither a place nor a transition." |> fail
@@ -182,13 +197,11 @@ let validate_net
   | Error s -> Error s
 
 let sexp_of_net (pn : net) : Sexp.t =
-  let sexp_of_markings markings =
-    Sexp.List (
-      List.map (
-        fun (name, mult) ->
-          Sexp.List [Sexp.Atom name; Sexp.Atom (Int.to_string mult)]
-      ) markings
-    )
+  let sexp_of_markings (markings : entity_marking) =
+    let sorts = List.split markings |> fst |> List.sort_uniq (String.compare) (* get sorts *)
+                |> List.map (fun s -> List.assoc s markings) |> List.concat (* get tokens grouped by sort *)
+    in
+    Sexp.List (List.map (fun x -> Sexp.Atom x) sorts)
   in
   let tokens =
     let tokens = pn.tokens in

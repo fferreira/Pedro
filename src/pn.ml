@@ -79,16 +79,12 @@ module Display = struct
 
   let default_edge_attributes _ = []
 
-  let edge_attributes (_, a, _) =
-    let rec render_attr = function
-      | (nm, n) :: rest ->
-         if n > 1 then
-           nm ^ "^" ^ string_of_int n ^ " " ^ render_attr rest
-         else
-           nm ^ " " ^ render_attr rest
-      | [] -> ""
+  let edge_attributes ((_, a, _) : PPN.edge) =
+    let pp_entity_marking m =
+      let sorts = List.split m |> fst |> List.sort_uniq (String.compare) in (* sort_uniq is not needed, just uniq *)
+      List.map (fun s -> List.assoc s m) sorts |> List.concat |> String.concat " "
     in
-    [`Label (render_attr a)]
+    [`Label (pp_entity_marking a)]
 
   let get_subgraph _ = None
 end

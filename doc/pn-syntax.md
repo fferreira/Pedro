@@ -30,14 +30,11 @@ token:msg m1 m2 m3 m4. (* if we specify the sort at the beginning all the tokens
 
 place name1 []. (*) a place with no initial marking
 place name2 [token1 token3]. (*) a place with two tokens
-place name3 [token1 token3^2]. (*) a place with three tokes where 'token2' appears twice
+place name3 [token1 token3 token3]. (*) a place with three tokes where 'token2' appears twice
 
 (*) many places can be declared in one line
 (*) the initial marking is required
 place name1[] name2[] name3[token1 token2^3].
-
-(*) note: the notation "^n" where n is a natural number,
-(*) means that we have n copies of a token.
 
 (** Transitions **)
 
@@ -52,7 +49,7 @@ transition "A->B<m>". (*) use double quotes to accept more characters.
 
 (*) Arcs relate places and transitions and have associated a multiset of tokens.
 
-name>->name[token1 token2^3]
+name>->name[token1 token2 token2 token1]
 
 (*) Also we can specify a complete arch in the following way:
 name>->name[token1]>->name[token]...

@@ -26,9 +26,6 @@ let pp_name nm =
   in
   if is_identifier then nm  else "\"" ^ nm ^ "\""
 
-let pp_name_with_multiplicity (nm, n) =
-  if n = 1 then pp_name nm
-  else pp_name nm ^ "^" ^ string_of_int n
 
 let pp_tokens tks =
   let toks = List.map (function |Token (nm, s) -> (nm, s) |_ -> failwith "violation can't be this") tks in
@@ -50,7 +47,7 @@ let pp_tokens tks =
 let pp_places pcs =
   let pcs' = List.map (function |Place (nm, tks) -> (nm, tks) |_ -> failwith "violation can't be this") pcs in
   let print_place (nm, tks) =
-    pp_name nm ^ "[" ^ (String.concat " " @@ List.map pp_name_with_multiplicity tks) ^ "]"
+    pp_name nm ^ "[" ^ (String.concat " " @@ List.map pp_name tks) ^ "]"
   in
   "place " ^ String.concat " " (List.map print_place pcs') ^ "."
 
@@ -66,7 +63,7 @@ let pp_transitions trs =
 let pp_arcs arcs =
   let arcs' = List.map (function |Arc (src, dst, tks) -> (src, dst, tks) |_ -> failwith "violation can't be this") arcs in
   let rec pp arcs =
-    let pp_tokens ts = "[" ^ (String.concat " " @@ List.map pp_name_with_multiplicity ts) ^ "]" in
+    let pp_tokens ts = "[" ^ (String.concat " " @@ List.map pp_name ts) ^ "]" in
     let rec continue_arc_from p arcs =
       match find_and_remove_fst (fun (a, _, _)-> a = p) arcs with
       | Some ((_, dst', tks'), arcs')->
