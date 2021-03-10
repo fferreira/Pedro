@@ -67,7 +67,7 @@ module Display = struct
   let vertex_name = function
   | Place nm -> "\"" ^ nm ^ "\""
   | Transition (nm, Labelled) -> "\"" ^ nm ^ "\""
-  | Transition (_, Silent) -> ""
+  | Transition (nm, Silent) -> "\"(" ^ nm ^ ")\""
 
   let graph_attributes _ = [`Rankdir `LeftToRight]
 
@@ -75,7 +75,8 @@ module Display = struct
 
   let vertex_attributes = function
     | Place _ -> [`Shape `Circle]
-    | Transition _ -> [`Shape `Box]
+    | Transition (_, Labelled) -> [`Shape `Box]
+    | Transition (_, Silent) -> [`Shape `Diamond ; `Label ""]
 
   let default_edge_attributes _ = []
 

@@ -1,0 +1,17 @@
+(* A simple recursive protocol µX. P->Q.X *)
+
+
+token A B.
+token m:msg.
+
+place 1[A] 2[B] 3[].
+
+transition "A!B<m>" "A?B<m>".
+transition (muA) (muB).
+
+1>->"A!B<m>"[A]>->2[A m]>->"A?B<m>"[B m]>->3[B]. (*) send and receive a message
+
+(*) silent recursion
+2>->muA[A]>->1[A].
+
+3>->muB[B]>->2[B].
