@@ -5,7 +5,7 @@ open Syntax
  *
  * type token = Token of name * int (\* a token has a name and a multiplicity *\) *)
 
-type node = Place of name
+type node = Place of name * name list
           | Transition of name * vis
 
 (* if the label is to a transition it is the tokens it needs to
@@ -52,10 +52,15 @@ let generate_ppn (n : net) : PPN.t =
        begin match dir with
        | PlaceToTransition ->
           let vis = List.assoc dst n.transitions in (* this should not fail for well formed nets *)
-          add rest (PPN.add_edge_e g (Place src, tks, Transition (dst, vis)))
+
+          let srcm = List.assoc src n.places in
+          let srctks =  List.split srcm |> fst |> List.map (fun s -> List.assoc s srcm)  |> List.concat in
+          add rest (PPN.add_edge_e g (Place (src, srctks), tks, Transition (dst, vis)))
        | TransitionToPlace ->
           let vis = List.assoc src n.transitions in (* this should not fail for well formed nets *)
-          add rest (PPN.add_edge_e g (Transition (src, vis), tks, Place dst))
+          let dstm = List.assoc dst n.places in
+          let dsttks =  List.split dstm |> fst |> List.map (fun s -> List.assoc s dstm)  |> List.concat in
+          add rest (PPN.add_edge_e g (Transition (src, vis), tks, Place (dst, dsttks)))
        end
     | [] -> g
   in
@@ -65,7 +70,7 @@ module Display = struct
   include PPN
 
   let vertex_name = function
-  | Place nm -> "\"" ^ nm ^ "\""
+  | Place (nm, _) -> "\"" ^ nm ^ "\""
   | Transition (nm, Labelled) -> "\"" ^ nm ^ "\""
   | Transition (nm, Silent) -> "\"(" ^ nm ^ ")\""
 
@@ -74,7 +79,8 @@ module Display = struct
   let default_vertex_attributes _ = []
 
   let vertex_attributes = function
-    | Place _ -> [`Shape `Circle]
+    | Place (_, []) -> [`Shape `Circle ; `Label ""]
+    | Place (_, tks) -> [`Shape `Circle ; `Label (String.concat " " tks)]
     | Transition (_, Labelled) -> [`Shape `Box]
     | Transition (_, Silent) -> [`Shape `Diamond ; `Label ""]
 
