@@ -46,5 +46,7 @@ let () = print_endline "//Vote for Pedro!" ;
             print_endline "----SExp----" ;
             Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum |>print_endline ;
             print_endline "----Pedro----" ;
-            Pretty.pp_expr_list exprs |> print_endline
+            Pretty.pp_expr_list exprs |> print_endline ;
+            print_endline "----Information----" ;
+            "Enabled transitions: " ^ (Opsem.enabled_transitions net |> String.concat " ") |> print_endline
          | Error err -> "//Alles kaputt!: " ^ err |> print_endline
