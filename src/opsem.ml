@@ -27,5 +27,6 @@ let is_transition_enabled (n : net) (nm : name) : bool =
     in
     List.for_all (fun (src,_,_,m) -> has_enough src m) collect_arcs
 
+(* lists enabled transitions *)
 let enabled_transitions n =
   List.map fst n.transitions |> List.filter (is_transition_enabled n)

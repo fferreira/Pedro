@@ -16,11 +16,11 @@ transition "B!A<share>" "B?A<share>".
 transition "A!S<buy>" "A?S<buy>".
 
 
-p0>->"A!S<query>"[A query]>->p1[A query]>->"A?S<query>"[S query]>->p2[S].
+p0>->"A!S<query>"[A]>->p1[A query]>->"A?S<query>"[S query]>->p2[S].
 
 
-p2>->"S!A<quote>"[S quote]>->p3[S quote]>->"S?A<quote>"[A quote]>->p4[A].
-p4>->"S!B<quote'>"[S quote']>->p5[S quote']>->"S?B<quote'>"[B quote']>->p6[B].
+p2>->"S!A<quote>"[S]>->p3[S quote]>->"S?A<quote>"[A quote]>->p4[A].
+p4>->"S!B<quote'>"[S]>->p5[S quote']>->"S?B<quote'>"[B quote']>->p6[B].
 
-p6>->"B!A<share>"[B share]>->p7[B share]>->"B?A<share>"[B share]>->p8[B].
-p8>->"A!S<buy>"[A buy]>->p9[A buy]>->"A?S<buy>"[S buy]>->p10[S].
+p6>->"B!A<share>"[B]>->p7[B share]>->"B?A<share>"[B share]>->p8[B].
+p8>->"A!S<buy>"[A]>->p9[A buy]>->"A?S<buy>"[S buy]>->p10[S].
