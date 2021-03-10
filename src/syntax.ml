@@ -16,6 +16,7 @@ type expr
   | Place of name * token_queue
   | Transition of name * vis
   | Arc of name * name * token_queue
+  | Marking of name * (name * token_queue) list (* lists a named list of places and their states *)
 
 (* check the scope of pedro expressions *)
 
@@ -25,6 +26,7 @@ type net =
   ; places : (name * entity_marking) list
   ; transitions : (name * vis) list
   ; arcs : (name * name * dir * entity_marking) list
+  ; markings : (string * (name * entity_marking) list) list (* a name and a list of states and their markings *)
   }
 
 let empty_net =
@@ -33,6 +35,7 @@ let empty_net =
   ; places  = []
   ; transitions = []
   ; arcs = []
+  ; markings = []
   }
 
 module Scoped =
@@ -123,6 +126,20 @@ module Scoped =
     let add_arc src dst d tks =
       let* ctx = get_arcs in
       (src, dst, d, tks):: ctx |> set_arcs
+
+    let get_markings =
+      let* st = get in
+      return st.markings
+
+    let set_markings markings =
+      let* st = get in
+      set {st with markings}
+
+    let add_marking mk =
+      let* mks = get_markings in
+      mk :: mks |> set_markings
+
+
   end
 
 module Monadic =
@@ -146,14 +163,14 @@ module Monadic =
       | Token (nm, sort) ->
          let* ex = exists_token nm in
          if ex then
-           "Token: " ^ nm ^ " defined more than once" |> fail
+           "Token: " ^ nm ^ " defined more than once." |> fail
          else
            add_token nm sort
 
       | Place (nm, tks) ->
          let* ex = exists_place nm in
          if ex then
-           "Place: " ^ nm ^ " defined more than once" |> fail
+           "Place: " ^ nm ^ " defined more than once." |> fail
          else
            let* tks' = process_tkn_list tks in
            add_place nm tks'
@@ -161,7 +178,7 @@ module Monadic =
       | Transition (nm, vis) ->
          let* ex = exists_transition nm in
          if ex then
-           "Transition: " ^ nm ^ " defined more than once" |> fail
+           "Transition: " ^ nm ^ " defined more than once." |> fail
          else add_transition (nm, vis)
 
       | Arc (src, dst, tks) ->
@@ -181,6 +198,15 @@ module Monadic =
              else dst ^ " is not a place!" |> fail
            else
              src ^ " is neither a place nor a transition." |> fail
+
+      | Marking (nm, mks) ->
+         let f (pl, tks) =
+           let* ep = exists_place pl in
+           let* tks' = process_tkn_list tks in
+           if ep then return (pl, tks') else pl ^ " is not a state." |> fail
+         in
+         let* mks' = map f mks in
+         add_marking (nm, mks')
 
     let check (es : expr list) : unit t =
       let* _ = Scoped.map check_expr es in

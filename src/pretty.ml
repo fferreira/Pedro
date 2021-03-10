@@ -27,21 +27,22 @@ let pp_name nm =
   if is_identifier then nm  else "\"" ^ nm ^ "\""
 
 
+
 let pp_tokens tks =
   let toks = List.map (function |Token (nm, s) -> (nm, s) |_ -> failwith "violation can't be this") tks in
-  let sorts = List.map snd toks |> uniq in
   let print_per_sort s =
     let toks = List.filter (fun (_, s') -> s' = s) toks |> List.map fst in
     if List.length toks = 0 then failwith "this cannot happen" ;
     if List.length toks = 1 then
       let tok = List.hd toks in
       if tok = s then
-        "token " ^ pp_name tok ^ "."
+      "token " ^ pp_name tok ^ "."
       else
         "token " ^ pp_name tok ^ ":" ^ pp_name s ^ "."
     else
       "token:" ^ pp_name s ^ " " ^ String.concat " " toks ^ "."
   in
+  let sorts = List.map snd toks |> uniq in
   List.map print_per_sort sorts |> String.concat "\n"
 
 let pp_places pcs =
@@ -80,9 +81,28 @@ let pp_arcs arcs =
   in
   pp arcs'
 
+let pp_marking (nm, pcs) =
+  let print_tkns m = List.map pp_name m |> String.concat " " in
+  let print_place (nm, m) = nm ^ "[" ^ (print_tkns m) ^ "]" in
+  let str = List.map print_place pcs |> String.concat " "  in
+
+  "marking " ^ pp_name nm ^ str ^ "."
+
+let pp_markings markings =
+  let markings' = List.map (function |Marking (nm, mks) -> (nm, mks) |_ -> failwith "violation can't be this") markings in
+  List.map pp_marking markings' |> String.concat "\n"
+
+
+
+
 let pp_expr_list exprs =
   let tokens = List.filter (function Token _ -> true |_ -> false) exprs in
   let places = List.filter (function Place _ -> true |_ -> false) exprs in
   let transitions = List.filter (function Transition _ -> true |_ -> false) exprs in
   let arcs = List.filter (function Arc _ -> true |_ -> false) exprs in
-  String.concat "\n" [pp_tokens tokens ; pp_places places ; pp_transitions transitions ; pp_arcs arcs]
+  let markings =  List.filter (function Marking _ -> true |_ -> false) exprs in
+  String.concat "\n" [pp_tokens tokens
+                    ; pp_places places
+                    ; pp_transitions transitions
+                    ; pp_arcs arcs
+                    ; pp_markings markings]

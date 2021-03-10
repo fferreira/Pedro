@@ -1,6 +1,6 @@
 %token EOI
 
-%token TOKEN PLACE TRANSITION ARROW
+%token TOKEN PLACE TRANSITION ARROW MARKING
 
 %token SQLEFT SQRIGHT PERIOD COLON LPARENS RPARENS
 
@@ -36,11 +36,15 @@ let exprs :=
   | TOKEN ; tks = token_with_sort+ ; PERIOD ; < >
   | TRANSITION ; trs = transition+ ; PERIOD ; { List.map (fun (x, y) -> Transition (x, y)) trs }
   | PLACE ; pcs = place+ ; PERIOD ; < >
+  | MARKING ; nm = name ; mks = entity_with_tokens+ ; PERIOD ; { [ Marking (nm,  mks) ] }
   | arcs = arc ; PERIOD ; < >
 
 let transition :=
  | nm = name ; { (nm, Labelled) }
  | LPARENS ; nm = name ; RPARENS ; { (nm, Silent) }
+
+let entity_with_tokens :=
+  | nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; < >
 
 let place :=
   | nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; { Place (nm, tks) }

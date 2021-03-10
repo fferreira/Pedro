@@ -54,6 +54,7 @@ and token = parse
 | "token" { TOKEN }
 | "place" { PLACE }
 | "transition" { TRANSITION }
+| "marking" { MARKING }
 | ">->" { ARROW }
 
 
