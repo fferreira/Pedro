@@ -2,7 +2,7 @@
 
 token P Q.
 
-token:msg m1 m2.
+token m1 m2.
 
 place "0"[P] "1"[Q] "2"[] "3"[] "4"[Q] "5"[].
 

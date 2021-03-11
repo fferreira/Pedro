@@ -14,21 +14,8 @@ let pp_name nm =
 
 
 let pp_tokens tks =
-  let toks = List.map (function |Token (nm, s) -> (nm, s) |_ -> failwith "violation can't be this") tks in
-  let print_per_sort s =
-    let toks = List.filter (fun (_, s') -> s' = s) toks |> List.map fst in
-    if List.length toks = 0 then failwith "this cannot happen" ;
-    if List.length toks = 1 then
-      let tok = List.hd toks in
-      if tok = s then
-      "token " ^ pp_name tok ^ "."
-      else
-        "token " ^ pp_name tok ^ ":" ^ pp_name s ^ "."
-    else
-      "token:" ^ pp_name s ^ " " ^ String.concat " " toks ^ "."
-  in
-  let sorts = List.map snd toks |> uniq in
-  List.map print_per_sort sorts |> String.concat "\n"
+  let toks = List.map (function |Token nm -> nm |_ -> failwith "violation can't be this") tks in
+  "token " ^ (String.concat " " toks) ^ "."
 
 let pp_places pcs =
   let pcs' = List.map (function |Place (nm, tks) -> (nm, tks) |_ -> failwith "violation can't be this") pcs in

@@ -54,13 +54,11 @@ let generate_ppn (n : net) : PPN.t =
           let vis = List.assoc dst n.transitions in (* this should not fail for well formed nets *)
 
           let srcm = List.assoc src n.places in
-          let srctks =  List.split srcm |> fst |> List.map (fun s -> List.assoc s srcm)  |> List.concat in
-          add rest (PPN.add_edge_e g (Place (src, srctks), tks, Transition (dst, vis)))
+          add rest (PPN.add_edge_e g (Place (src, srcm), tks, Transition (dst, vis)))
        | TransitionToPlace ->
           let vis = List.assoc src n.transitions in (* this should not fail for well formed nets *)
           let dstm = List.assoc dst n.places in
-          let dsttks =  List.split dstm |> fst |> List.map (fun s -> List.assoc s dstm)  |> List.concat in
-          add rest (PPN.add_edge_e g (Transition (src, vis), tks, Place (dst, dsttks)))
+          add rest (PPN.add_edge_e g (Transition (src, vis), tks, Place (dst, dstm)))
        end
     | [] -> g
   in
@@ -87,11 +85,7 @@ module Display = struct
   let default_edge_attributes _ = []
 
   let edge_attributes ((_, a, _) : PPN.edge) =
-    let pp_entity_marking m =
-      let sorts = List.split m |> fst |> List.sort_uniq (String.compare) in (* sort_uniq is not needed, just uniq *)
-      List.map (fun s -> List.assoc s m) sorts |> List.concat |> String.concat " "
-    in
-    [`Label (pp_entity_marking a)]
+    [`Label (String.concat " " a)]
 
   let get_subgraph _ = None
 end

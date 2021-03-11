@@ -1,51 +1,16 @@
 open Syntax
 open Util
 
+let consume_one_from_marking (m : entity_marking) (t: name) : entity_marking option =
+  if List.mem t m then Some (remove_one ((=) t) m) else None
+
 (* consumes mreq resources from mavail and returns the new mavail if enough resources are present*)
 let rec consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : entity_marking option =
-  match mreq with
-    [] -> Some mavail
-  | (_, [])::mreq' -> consume_from_marking mavail mreq'
-  | (s, tkn::tkns)::mreq' ->
-     begin match List.assoc_opt s mavail with
-     | None
-     | Some [] -> None
-
-     | Some tkns' when List.mem tkn tkns' ->
-        let mavail' = List.remove_assoc s mavail in
-        let tkns'' = remove_one ((=)tkn) tkns' in
-        consume_from_marking ((s, tkns'')::mavail') ((s, tkns)::mreq')
-
-     | Some (_::_) -> None
-     end
-
-(* (\* consumes mreq resources from mavail and returns the new mavail and the remaining resources to consume *\)
- * let rec partial_consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : entity_marking * entity_marking =
- *   match mreq with
- *     [] -> mavail, []
- *   | (_, [])::mreq' -> partial_consume_from_marking mavail mreq'
- *   | (s, tkn::tkns)::mreq' ->
- *      begin match List.assoc_opt s mavail with
- *      | None
- *      | Some [] -> (\* there are no s resources in mavail, continue *\)
- *         let mavail', mreq' = partial_consume_from_marking mavail mreq' in
- *         mavail', (s, tkn::tkns)::mreq'
- *
- *      | Some (tkn'::tkns') when tkn = tkn' ->
- *         let mavail' = List.remove_assoc s mavail in
- *         partial_consume_from_marking ((s, tkns')::mavail') ((s, tkns)::mreq')
- *
- *      | Some (_::_) -> mavail, mreq
- *      end *)
-
-let rec add_to_marking (mavail : entity_marking) (mprov : entity_marking) : entity_marking =
-  match mprov with
-| [] -> mavail
-| (_, [])::mprov' -> add_to_marking mavail mprov'
-| (s, tkns)::mprov' ->
-   let av_tkns = List.assoc_opt s mavail |> Option.value ~default: [] in
-   add_to_marking ((s, av_tkns @ tkns) :: (List.remove_assoc s mavail)) mprov'
-
+match mreq with
+| [] -> Some mavail
+| tkn::tkns ->
+   Option.bind (consume_one_from_marking mavail tkn) (fun mavail' ->
+       consume_from_marking mavail' tkns)
 
 (* checks if a transition is enabled *)
 let is_transition_enabled (n : net) (nm : name) : bool =
@@ -87,7 +52,7 @@ let do_transition (n : net) (t : name) : net option =
     if List.length collect_arcs = 0 then None else
       let add_arc  (_src, dst, _dir, mprov) n =
         let mdest = List.assoc dst n.places in
-        let places = (dst, add_to_marking mdest mprov)::List.remove_assoc dst n.places in
+        let places = (dst, mdest @ mprov)::List.remove_assoc dst n.places in
         { n with places }
       in
       let rec add_all arcs n =
@@ -104,11 +69,7 @@ let do_transition (n : net) (t : name) : net option =
 (* do named transition, gather resources from silent transitions if needed *)
 let do_transition_with_silent (n : net) (t: name) : net =
   let remove_token_from_marking (t : name) (m : entity_marking) : entity_marking option =
-    let sort = List.assoc t n.tokens in
-    let av_tkns = List.assoc_opt sort m |> Option.value ~default:[] in
-    if List.length av_tkns = 0 then None
-    else if List.hd av_tkns = t then Some ((sort, List.tl av_tkns)::List.remove_assoc sort m)
-    else None
+    consume_one_from_marking m t
   in
 
   (* use silent transitions to bring to place pl token tkn from net n *)

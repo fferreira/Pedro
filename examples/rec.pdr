@@ -2,7 +2,7 @@
 
 
 token A B.
-token m:msg.
+token m.
 
 place 1[A] 2[B] 3[].
 

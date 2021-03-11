@@ -1,28 +1,24 @@
 open Sexplib
 
 type name = string
-type sort = string
 
-type token_queue = name list
-
-type entity_marking = (sort * token_queue) list (* a list of queues by sort *)
+type entity_marking = name list (* a list of tokens *)
 
 type dir = PlaceToTransition | TransitionToPlace
 
 type vis = Silent | Labelled
 
 type expr
-  = Token of name * sort (* token name and its sort *)
-  | Place of name * token_queue
+  = Token of name
+  | Place of name * entity_marking
   | Transition of name * vis
-  | Arc of name * name * token_queue
-  | Marking of name * (name * token_queue) list (* lists a named list of places and their states *)
+  | Arc of name * name * entity_marking
+  | Marking of name * (name * entity_marking) list (* lists a named list of places and their states *)
 
 (* check the scope of pedro expressions *)
 
 type net =
-  { sorts : sort list
-  ; tokens : (name * sort) list
+  { tokens : name list
   ; places : (name * entity_marking) list
   ; transitions : (name * vis) list
   ; arcs : (name * name * dir * entity_marking) list
@@ -30,8 +26,7 @@ type net =
   }
 
 let empty_net =
-  { sorts = []
-  ; tokens = []
+  { tokens = []
   ; places  = []
   ; transitions = []
   ; arcs = []
@@ -41,18 +36,6 @@ let empty_net =
 module Scoped =
   struct
     include Monad.State(struct type s = net end)
-
-    let get_sorts =
-      let* st = get in
-      return st.sorts
-
-    let set_sorts sorts =
-      let* st = get in
-      set {st with sorts}
-
-    let exists_sort x : bool t =
-      let* ctx = get_sorts in
-        List.mem x ctx |> return
 
     let get_tokens =
       let* st = get in
@@ -64,21 +47,11 @@ module Scoped =
 
     let exists_token x : bool t =
       let* ctx = get_tokens in
-      try
-        let _ = List.assoc x ctx in return true
-      with
-        Not_found -> return false
+      List.mem x ctx |> return
 
-    let lookup_token x : name t =
+    let add_token nm =
       let* ctx = get_tokens in
-      try
-        List.assoc x ctx |> return
-      with
-        Not_found -> failwith @@ "Unknown token " ^ x
-
-    let add_token nm sort =
-      let* ctx = get_tokens in
-      (nm, sort):: ctx |> set_tokens
+      nm::ctx |> set_tokens
 
     let get_places =
       let* st = get in
@@ -146,26 +119,21 @@ module Monadic =
   struct
     open Scoped
 
-    let rec process_tkn_list : token_queue ->  entity_marking t = function
+    let rec process_tkn_list : entity_marking ->  entity_marking t = function
       | nm::nms ->
-         let* sort = lookup_token nm in
-         let* rest = process_tkn_list nms in
-         begin match List.assoc_opt sort rest with
-         | None -> return @@ (sort, [nm]) :: rest
-         | Some queue ->
-            let rest' = List.remove_assoc sort rest in
-            return @@ (sort, List.append queue [nm]) :: rest'
-         end
+         let* ex = exists_token nm in
+         if ex then let* nms' = process_tkn_list nms in nm::nms' |> return
+         else "Token: " ^ nm ^ " unknown." |> fail
       | [] -> return []
 
     let check_expr (e : expr) : unit t =
       match e with
-      | Token (nm, sort) ->
+      | Token nm ->
          let* ex = exists_token nm in
          if ex then
            "Token: " ^ nm ^ " defined more than once." |> fail
          else
-           add_token nm sort
+           add_token nm
 
       | Place (nm, tks) ->
          let* ex = exists_place nm in
@@ -224,18 +192,14 @@ let validate_net
 
 let sexp_of_net (pn : net) : Sexp.t =
   let sexp_of_markings (markings : entity_marking) =
-    let sorts = List.split markings |> fst |> List.sort_uniq (String.compare) (* get sorts *)
-                |> List.map (fun s -> List.assoc s markings) |> List.concat (* get tokens grouped by sort *)
-    in
-    Sexp.List (List.map (fun x -> Sexp.Atom x) sorts)
+    Sexp.List (List.map (fun x -> Sexp.Atom x) markings)
   in
   let tokens =
     let tokens = pn.tokens in
-    let tokens = List.map (fun (token_name, kind) ->
+    let tokens = List.map (fun token_name ->
       Sexp.List
       [ Sexp.Atom "token"
       ; Sexp.Atom token_name
-      ; Sexp.Atom kind
       ]
     ) tokens
     in

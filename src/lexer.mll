@@ -12,10 +12,11 @@ let prime = '\''
 let letter = ['a'-'z' 'A'-'Z']
 let bang = '!'
 let qmark = '?'
+let colon = ':'
 
 let digit = ['0'-'9']
 
-let identifier = (letter|digit|underscore|prime|bang|qmark)+
+let identifier = (letter|digit|underscore|prime|bang|qmark|colon)+
 
 let int_literal = digit+
 
@@ -47,7 +48,6 @@ and token = parse
 | '(' { LPARENS }
 | ')' { RPARENS }
 | '.' { PERIOD }
-| ':' { COLON }
 
 (* keywords *)
 
