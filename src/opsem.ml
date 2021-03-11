@@ -1,9 +1,5 @@
 open Syntax
-
-let rec remove_one x = function
-| [] -> []
-| y::ys when x = y -> ys
-| y::ys -> y::remove_one x ys
+open Util
 
 (* consumes mreq resources from mavail and returns the new mavail if enough resources are present*)
 let rec consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : entity_marking option =
@@ -17,7 +13,7 @@ let rec consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : 
 
      | Some tkns' when List.mem tkn tkns' ->
         let mavail' = List.remove_assoc s mavail in
-        let tkns'' = remove_one tkn tkns' in
+        let tkns'' = remove_one ((=)tkn) tkns' in
         consume_from_marking ((s, tkns'')::mavail') ((s, tkns)::mreq')
 
      | Some (_::_) -> None

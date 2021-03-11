@@ -1,20 +1,5 @@
 open Syntax
-
-(* some utility function *)
-
-let rec uniq = function
-  | x::xs -> if List.mem x xs then uniq xs else x::uniq xs
-  | [] -> []
-
-let rec find_and_remove_fst (f : 'a -> bool) : 'a list -> ('a * 'a list) option =
-  function
-  | x :: xs when f x -> Some (x, xs)
-  | x :: xs ->
-     begin match find_and_remove_fst f xs with
-     | Some (y, ys) -> Some (y, x::ys)
-     | None -> None
-     end
-  | [] -> None
+open Util
 
 (* pretty printer *)
 
