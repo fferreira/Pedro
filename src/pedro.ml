@@ -48,5 +48,15 @@ let () = print_endline "//Vote for Pedro!" ;
             print_endline "----Pedro----" ;
             Pretty.pp_expr_list exprs |> print_endline ;
             print_endline "----Information----" ;
-            "Enabled transitions: " ^ (Opsem.enabled_transitions net |> String.concat " ") |> print_endline
+            "Enabled transitions: " ^ (Opsem.enabled_transitions net |> String.concat " ") |> print_endline ;
+            print_endline "----After first transition----" ;
+            if List.length (Opsem.enabled_transitions net) > 0
+            then
+              let net = Opsem.enabled_transitions net |> List.hd
+                        |> Opsem.do_transition net |> Option.value ~default:Syntax.empty_net
+              in
+              net |> Pn.generate_ppn |> Pn.generate_dot |> print_endline ;
+              net |> Opsem.enabled_transitions |> String.concat " " |> print_endline
+            else
+              "No first transition." |> print_endline
          | Error err -> "//Alles kaputt!: " ^ err |> print_endline
