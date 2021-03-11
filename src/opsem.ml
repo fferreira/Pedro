@@ -5,7 +5,7 @@ let rec remove_one x = function
 | y::ys when x = y -> ys
 | y::ys -> y::remove_one x ys
 
-(* consumes mreq resources from mavail and returns the new mavail *)
+(* consumes mreq resources from mavail and returns the new mavail if enough resources are present*)
 let rec consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : entity_marking option =
   match mreq with
     [] -> Some mavail
@@ -23,7 +23,24 @@ let rec consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : 
      | Some (_::_) -> None
      end
 
-open List
+(* (\* consumes mreq resources from mavail and returns the new mavail and the remaining resources to consume *\)
+ * let rec partial_consume_from_marking (mavail : entity_marking) (mreq: entity_marking) : entity_marking * entity_marking =
+ *   match mreq with
+ *     [] -> mavail, []
+ *   | (_, [])::mreq' -> partial_consume_from_marking mavail mreq'
+ *   | (s, tkn::tkns)::mreq' ->
+ *      begin match List.assoc_opt s mavail with
+ *      | None
+ *      | Some [] -> (\* there are no s resources in mavail, continue *\)
+ *         let mavail', mreq' = partial_consume_from_marking mavail mreq' in
+ *         mavail', (s, tkn::tkns)::mreq'
+ *
+ *      | Some (tkn'::tkns') when tkn = tkn' ->
+ *         let mavail' = List.remove_assoc s mavail in
+ *         partial_consume_from_marking ((s, tkns')::mavail') ((s, tkns)::mreq')
+ *
+ *      | Some (_::_) -> mavail, mreq
+ *      end *)
 
 let rec add_to_marking (mavail : entity_marking) (mprov : entity_marking) : entity_marking =
   match mprov with
@@ -50,8 +67,8 @@ let enabled_transitions n =
 
 
 
-
-let do_transition (n : net) (t : name) =
+(* do named transition if available *)
+let do_transition (n : net) (t : name) : net option =
   let consume n : net option =
     let collect_arcs = List.filter (fun (_, dst, _, _) -> t = dst) n.arcs in
     if List.length collect_arcs = 0 then None else
@@ -87,3 +104,49 @@ let do_transition (n : net) (t : name) =
       Some (add_all collect_arcs n)
   in
   Option.bind (consume n) (fun n' -> provide n')
+
+(* do named transition, gather resources from silent transitions if needed *)
+let do_transition_with_silent (n : net) (t: name) : net =
+  let remove_token_from_marking (t : name) (m : entity_marking) : entity_marking option =
+    let sort = List.assoc t n.tokens in
+    let av_tkns = List.assoc_opt sort m |> Option.value ~default:[] in
+    if List.length av_tkns = 0 then None
+    else if List.hd av_tkns = t then Some ((sort, List.tl av_tkns)::List.remove_assoc sort m)
+    else None
+  in
+
+  (* use silent transitions to bring to place pl token tkn from net n *)
+  let (* rec *) _use_silent pl tkn n : net option =
+    let is_silent tr = List.assoc tr n.transitions = Silent in
+    let has_token tkn m = remove_token_from_marking tkn m <> None in
+    let silent_arcs = (* these are silent arcs that bring the resource we need *)
+      List.filter
+        (fun (src, dst, _, m) -> pl = dst && is_silent src && has_token tkn m)
+        n.arcs
+    in
+    if List.length silent_arcs = 0 then None
+    else
+      (* there's at least one arc that could bring the token *)
+      let (* rec *)  _find_first = function
+        | [] -> None
+        | (_src, _dst, _dir, _mreq)::_arcs ->
+           (* if has_token ? src *)
+           assert false
+      in
+      assert false
+    and _bring_to_silent _tr _tkn _n = None
+
+  in
+
+  let _consume_one (n : net) src t : net =
+    let m = List.assoc src n.places in
+    let m_opt = remove_token_from_marking t m in
+    match m_opt with
+    | None -> n (* here go fishing for the resource *)
+    | Some m' -> {n with places = (src, m')::List.remove_assoc src n.places }
+  in
+
+  let req_arcs = List.filter (fun (_, dst, _, _) -> t = dst) n.arcs in
+  if List.length req_arcs = 0 then n
+  else
+    assert false
