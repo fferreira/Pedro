@@ -65,16 +65,14 @@ let do_transition (n : net) (t : name) : net option =
   Option.bind (consume n) (fun n' -> provide n')
 
 (* get place pl to have resource t by firing silent transitions, return None if it is impossible *)
-let rec get_silent_resource (pl : name) (t : name) (n : net) fuel : net option =
-  if fuel = 0 then None else begin
-  "visiting: " ^ pl ^ " asking for: " ^ t |> print_endline ;
+let rec get_silent_resource (pl : name) (t : name) (n : net) : net option =
   let is_silent tr = List.assoc tr n.transitions = Silent in
   let has_token tkn m = consume_one_from_marking m tkn <> None in
-  (* get the silent arcs that bring at least token t to place pl *)
-  let arcs_provide pl t n =
+  (* get the silent transitions that bring at least token t to place pl *)
+  let tr_provide pl t n =
     List.filter
       (fun (src, dst, _, m) -> pl = dst && is_silent src && has_token t m)
-      n.arcs
+      n.arcs |> List.map (fun (src, _, _, _) -> src)
   in
   (* get the arcs that are required by the transition *)
   let arcs_require tr n =
@@ -83,56 +81,46 @@ let rec get_silent_resource (pl : name) (t : name) (n : net) fuel : net option =
       n.arcs
   in
   (* try to fire this arc and return the new net if possible *)
-  let try_fire_arc (_, dst, _, _)  n  =
+  let try_fire_tr tr n  =
     (* all these arcs to transition have to be satisfied *)
-    let rarcs = arcs_require dst n in
-    let get_arc_requirements (_, dst, _, m) n : net option =
-         match get_silent_resource_many dst m n with (* replace with option bind *)
-         | None -> None
-         | Some n' ->
-            Some n' (* this is an unnecesary eta-long version REMOVE *)
-    in
+    let rarcs = arcs_require tr n in
     (* try and get all the requirements for the arcs to transaction *)
     let rec get_all_requirements rarcs n : net option =
       match rarcs with
       | [] -> Some n
-      | arc :: rarcs' ->
-         Option.bind (get_arc_requirements arc n) (fun n' ->
+      | (src, _, _, m) :: rarcs' ->
+         (* if we can get the resources for the first arc,
+            then continue with the rest *)
+         Option.bind (get_silent_resource_many src m n) (fun n' ->
            get_all_requirements rarcs' n')
     in
     Option.bind (get_all_requirements rarcs n) (fun n' ->
         (* this violation is just for sanity checking, because this phase cannot fail if we got this far *)
-        Some(Option.value
-               (do_transition n' dst)
-               ~default:(failwith "VIOLATION: all resources must have been collected by now")))
+        do_transition n' tr)
   in
   (* find the first source for the resource *)
-  let rec check_all_arcs n arcs =
-      match arcs with
+  let rec check_all_trs n trs =
+      match trs with
       | [] -> None (* no candidate arcs can be triggered *)
 
-      | arc :: arcs' ->
-         match try_fire_arc arc n with
+      | tr :: trs' ->
+         match try_fire_tr tr n with
          | Some n' -> Some n'
-         | None -> check_all_arcs n arcs'
+         | None -> check_all_trs n trs'
   in
   if List.mem t (List.assoc pl n.places) then Some n
   else
-    let arcs = arcs_provide pl t n in
-    if List.length arcs = 0 then None (* No arcs can bring the requried resource *)
+    let trs = tr_provide pl t n in
+    if List.length trs = 0 then None (* No arcs can bring the requried resource *)
     else
-      let r = check_all_arcs n arcs in
-      "visiting: " ^ pl ^ " asking for: " ^ t |> print_endline ;
-      r
-end
+      check_all_trs n trs
 
 and get_silent_resource_many (pl : name) (m : entity_marking) (n : net) : net option =
   match m with
   | [] -> Some n
   | tk::m' ->
-       Option.bind (get_silent_resource pl tk n 15) (fun n' ->
+       Option.bind (get_silent_resource pl tk n) (fun n' ->
            get_silent_resource_many pl m' n')
-
 
 
 (* do named transition, gather resources from silent transitions if needed *)
@@ -150,11 +138,7 @@ let do_transition_with_silent (n : net) (t: name) : net option =
             bring_resources n' rarcs)
      | [] -> Some n
    in
-   Option.bind (bring_resources n rarcs) (fun n' ->
-       Some(Option.value
-              (do_transition n' t)
-              ~default:(failwith "VIOLATION: all resources must have been collected by now")))
-
+   Option.bind (bring_resources n rarcs) (fun n' ->do_transition n' t)
 
 let is_transition_enabled_with_silent (n : net) (nm : name) : bool =
   match do_transition_with_silent n nm with
