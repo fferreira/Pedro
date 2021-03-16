@@ -29,7 +29,37 @@ let parse fname (ch : in_channel) =
 
 let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 
-let () = print_endline "//Vote for Pedro!" ;
+let main fn =
+   print_endline @@ "//Reading: " ^ fn ;
+   let exprs = parse fn (Stdlib.open_in fn) in
+   match Syntax.validate_net exprs with
+   | Ok net ->
+      print_endline "----Graphviz----" ;
+      Pn.generate_ppn net |> Pn.generate_dot |> print_endline ;
+      print_endline "----SExp----" ;
+      Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum |>print_endline ;
+      print_endline "----Pedro----" ;
+      Pretty.pp_expr_list exprs |> print_endline ;
+      print_endline "----Information----" ;
+      "Enabled transitions: " ^ (Opsem.enabled_transitions net |> String.concat " ") |> print_endline ;
+      "Enabled transitions (with silent): " ^
+        (Opsem.enabled_transitions_with_silent net |> String.concat " ") |> print_endline ;
+      print_endline "----After first transition----" ;
+      if List.length (Opsem.enabled_transitions net) > 0
+      then
+        let net = Opsem.enabled_transitions net |> List.hd
+                  |> Opsem.do_transition net |> Option.value ~default:Syntax.empty_net
+        in
+        net |> Pn.generate_ppn |> Pn.generate_dot |> print_endline ;
+        print_endline "----Information after the first transition ----" ;
+        "Enabled transitions: " ^ (net |> Opsem.enabled_transitions |> String.concat " ") |> print_endline;
+        "Enabled transitions: " ^ (net |> Opsem.enabled_transitions_with_silent |> String.concat " ") |> print_endline
+      else
+        "No first transition." |> print_endline
+   | Error err -> "//Alles kaputt!: " ^ err |> print_endline
+
+let () = Callback.register "main" main ;
+         print_endline "//Vote for Pedro!" ;
          print_endline @@ "//Current working directory: " ^ Sys.getcwd ()  ;
          let fn =
            if Array.length Sys.argv = 2 then
@@ -37,30 +67,4 @@ let () = print_endline "//Vote for Pedro!" ;
            else
              "examples/proto.pdr"
          in
-         print_endline @@ "//Reading: " ^ fn ;
-         let exprs = parse fn (Stdlib.open_in fn) in
-         match Syntax.validate_net exprs with
-         | Ok net ->
-            print_endline "----Graphviz----" ;
-            Pn.generate_ppn net |> Pn.generate_dot |> print_endline ;
-            print_endline "----SExp----" ;
-            Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum |>print_endline ;
-            print_endline "----Pedro----" ;
-            Pretty.pp_expr_list exprs |> print_endline ;
-            print_endline "----Information----" ;
-            "Enabled transitions: " ^ (Opsem.enabled_transitions net |> String.concat " ") |> print_endline ;
-            "Enabled transitions (with silent): " ^
-              (Opsem.enabled_transitions_with_silent net |> String.concat " ") |> print_endline ;
-            print_endline "----After first transition----" ;
-            if List.length (Opsem.enabled_transitions net) > 0
-            then
-              let net = Opsem.enabled_transitions net |> List.hd
-                        |> Opsem.do_transition net |> Option.value ~default:Syntax.empty_net
-              in
-              net |> Pn.generate_ppn |> Pn.generate_dot |> print_endline ;
-              print_endline "----Information after the first transition ----" ;
-              "Enabled transitions: " ^ (net |> Opsem.enabled_transitions |> String.concat " ") |> print_endline;
-              "Enabled transitions: " ^ (net |> Opsem.enabled_transitions_with_silent |> String.concat " ") |> print_endline
-            else
-              "No first transition." |> print_endline
-         | Error err -> "//Alles kaputt!: " ^ err |> print_endline
+         main fn
