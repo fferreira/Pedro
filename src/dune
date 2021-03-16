@@ -1,6 +1,7 @@
 (executables
  (names pedro)
- (libraries ocamlgraph sexplib))
+ (libraries ocamlgraph sexplib)
+ (modes (best exe) (best object) (best shared_object)))
 
 (ocamllex
   (modules lexer))
