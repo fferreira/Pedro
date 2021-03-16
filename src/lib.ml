@@ -55,4 +55,3 @@ let main fn =
         "No first transition." |> print_endline
    | Error err -> "//Alles kaputt!: " ^ err |> print_endline
 
-let () = Callback.register "main" main
