@@ -1,7 +1,8 @@
 (executables
  (names pedrolib)
  (libraries pedrolib)
- (modes (best shared_object))
+ (modes
+  (best shared_object))
  (modules pedrolib))
 
 (executables
