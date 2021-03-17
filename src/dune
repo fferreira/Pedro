@@ -1,8 +1,8 @@
 (executables
- (names gopedro)
+ (names pedrolib)
  (libraries pedrolib)
  (modes (best shared_object))
- (modules gopedro))
+ (modules pedrolib))
 
 (executables
  (names pedro)
