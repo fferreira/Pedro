@@ -1,14 +1,13 @@
 (executables
+ (names gopedro)
+ (libraries pedrolib)
+ (modes (best shared_object))
+ (modules gopedro))
+
+(executables
  (names pedro)
- (libraries ocamlgraph sexplib)
- (modes (best exe) (best object) (best shared_object)))
-
-(ocamllex
-  (modules lexer))
-
-(menhir
-  (modules parser)
-  (flags "--explain"))
+ (libraries pedrolib)
+ (modules pedro))
 
 (install
  (section bin)

@@ -1,0 +1,11 @@
+(library
+  (name pedrolib)
+  (libraries ocamlgraph sexplib))
+
+(ocamllex
+  (modules lexer))
+
+(menhir
+  (modules parser)
+  (flags "--explain"))
+

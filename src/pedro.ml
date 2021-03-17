@@ -1,5 +1,3 @@
-let () = Callback.register "main" Lib.main
-(*
 let () = print_endline "//Vote for Pedro!" ;
          print_endline @@ "//Current working directory: " ^ Sys.getcwd ()  ;
          let fn =
@@ -8,5 +6,4 @@ let () = print_endline "//Vote for Pedro!" ;
            else
              "examples/proto.pdr"
          in
-         Lib.main fn
-*)
+         Pedrolib.Lib.main fn
