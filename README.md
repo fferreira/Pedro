@@ -1,2 +1,3 @@
-# Pedro
-A playground for thinking about petri nets in OCaml
+# Pedro -- Multiparty nets
+
+A library for manipulating Petri Net representations of MPST global types.
