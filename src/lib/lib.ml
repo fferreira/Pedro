@@ -27,6 +27,15 @@ let parse fname (ch : in_channel) =
 
 let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 
+let validate_exprs_to_net_to_exprs_to_net exprs =
+  match Syntax.validate_net exprs with
+  | Ok net ->
+     begin match Syntax.expr_list_of_net net |> Syntax.validate_net with
+     | Ok net -> net
+     | _ -> failwith "Violation: this cannot happen"
+     end
+  | _ -> failwith "Violation: this cannot happen"
+
 let main fn =
   print_endline @@ "//Reading: " ^ fn ;
   let exprs = parse fn (Stdlib.open_in fn) in
@@ -38,6 +47,9 @@ let main fn =
       Syntax.sexp_of_net net |> Sexplib.Sexp.to_string_hum |> print_endline ;
       print_endline "----Pedro----" ;
       Pretty.pp_expr_list exprs |> print_endline ;
+      print_endline "----Pedro from net----" ;
+      let net' = net |> Syntax.expr_list_of_net |> Pretty.pp_expr_list in
+      print_endline net' ;
       print_endline "----Information----" ;
       "Enabled transitions: "
       ^ (Opsem.enabled_transitions net |> String.concat " ")
@@ -45,8 +57,11 @@ let main fn =
       "Enabled transitions (with silent): "
       ^ (Opsem.enabled_transitions_with_silent net |> String.concat " ")
       |> print_endline ;
+      "Enabled transitions (with silent, and pretty print back): "
+      ^ (Opsem.enabled_transitions_with_silent @@ validate_exprs_to_net_to_exprs_to_net exprs |> String.concat " ")
+      |> print_endline ;
       print_endline "----After first transition----" ;
-      if List.length (Opsem.enabled_transitions net) > 0 then (
+      if List.length (Opsem.enabled_transitions net) > 0 then
         let net =
           Opsem.enabled_transitions net
           |> List.hd |> Opsem.do_transition net
@@ -59,6 +74,6 @@ let main fn =
         |> print_endline ;
         "Enabled transitions: "
         ^ (net |> Opsem.enabled_transitions_with_silent |> String.concat " ")
-        |> print_endline )
+        |> print_endline
       else "No first transition." |> print_endline
   | Error err -> "//Alles kaputt!: " ^ err |> print_endline

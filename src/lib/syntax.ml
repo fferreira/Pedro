@@ -171,6 +171,14 @@ let validate_net (es : expr list) : net Monad.res =
   let n', res = Scoped.run (Monadic.check es) empty_net in
   match res with Ok _ -> Ok n' | Error s -> Error s
 
+let expr_list_of_net (pn : net) : expr list =
+  let tkns = List.map (fun n -> Token n) pn.tokens in
+  let places = List.map (fun (n, m) -> Place (n, m)) pn.places in
+  let trs = List.map (fun (n, vis) -> Transition (n, vis)) pn.transitions in
+  let arcs = List.map (fun (src, dst, _, m) -> Arc (src, dst, m)) pn.arcs in
+  let ms = List.map (fun (nm, mks) -> Marking (nm, mks)) pn.markings in
+  tkns @ places @ trs @ arcs @ ms
+
 let sexp_of_net (pn : net) : Sexp.t =
   let sexp_of_markings (markings : entity_marking) =
     Sexp.List (List.map (fun x -> Sexp.Atom x) markings)
