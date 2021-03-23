@@ -1,5 +1,3 @@
-
-
 (* internal state *)
 
 let pn : Syntax.net ref = ref Syntax.empty_net
@@ -8,20 +6,25 @@ let pn : Syntax.net ref = ref Syntax.empty_net
 
 let load_from_file (fn : string) : bool =
   match Lib.parse fn (Stdlib.open_in fn) |> Syntax.validate_net with
-  | Ok n -> pn := n ; true
+  | Ok n ->
+      pn := n ;
+      true
   | Error _ -> false
 
 let save_to_file (fn : string) =
   try
     let ch = Stdlib.open_out fn in
-    Syntax.expr_list_of_net !pn |> Pretty.pp_expr_list |> Stdlib.output_string ch ; true
+    Syntax.expr_list_of_net !pn
+    |> Pretty.pp_expr_list |> Stdlib.output_string ch ;
+    true
   with _ -> false
 
 let get_enabled_transitions () : string list =
   Opsem.enabled_transitions_with_silent !pn
 
-
 let do_transition (tr : string) : bool =
   match Opsem.do_transition_with_silent !pn tr with
-  | Some pn' -> pn := pn' ; true
+  | Some pn' ->
+      pn := pn' ;
+      true
   | None -> false

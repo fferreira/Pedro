@@ -29,11 +29,10 @@ let parse_string string = parse_from_lexbuf @@ Lexing.from_string string
 
 let validate_exprs_to_net_to_exprs_to_net exprs =
   match Syntax.validate_net exprs with
-  | Ok net ->
-     begin match Syntax.expr_list_of_net net |> Syntax.validate_net with
-     | Ok net -> net
-     | _ -> failwith "Violation: this cannot happen"
-     end
+  | Ok net -> (
+    match Syntax.expr_list_of_net net |> Syntax.validate_net with
+    | Ok net -> net
+    | _ -> failwith "Violation: this cannot happen" )
   | _ -> failwith "Violation: this cannot happen"
 
 let main fn =
@@ -58,10 +57,12 @@ let main fn =
       ^ (Opsem.enabled_transitions_with_silent net |> String.concat " ")
       |> print_endline ;
       "Enabled transitions (with silent, and pretty print back): "
-      ^ (Opsem.enabled_transitions_with_silent @@ validate_exprs_to_net_to_exprs_to_net exprs |> String.concat " ")
+      ^ ( Opsem.enabled_transitions_with_silent
+          @@ validate_exprs_to_net_to_exprs_to_net exprs
+        |> String.concat " " )
       |> print_endline ;
       print_endline "----After first transition----" ;
-      if List.length (Opsem.enabled_transitions net) > 0 then
+      if List.length (Opsem.enabled_transitions net) > 0 then (
         let net =
           Opsem.enabled_transitions net
           |> List.hd |> Opsem.do_transition net
@@ -74,6 +75,6 @@ let main fn =
         |> print_endline ;
         "Enabled transitions: "
         ^ (net |> Opsem.enabled_transitions_with_silent |> String.concat " ")
-        |> print_endline
+        |> print_endline )
       else "No first transition." |> print_endline
   | Error err -> "//Alles kaputt!: " ^ err |> print_endline
