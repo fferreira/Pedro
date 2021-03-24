@@ -18,7 +18,7 @@ let rec consume_from_marking (mavail : entity_marking) (mreq : entity_marking)
 (* checks if a transition is enabled *)
 let is_transition_enabled (n : net) (nm : name) : bool =
   let collect_arcs = List.filter (fun (_, dst, _, _) -> nm = dst) n.arcs in
-  if List.length collect_arcs = 0 then false
+  if Util.is_empty collect_arcs then false
   else
     let has_enough pl mreq =
       let mavail = List.assoc pl n.places in
@@ -36,7 +36,7 @@ let enabled_transitions n =
 let do_transition (n : net) (t : name) : net option =
   let consume n : net option =
     let collect_arcs = List.filter (fun (_, dst, _, _) -> t = dst) n.arcs in
-    if List.length collect_arcs = 0 then None
+    if Util.is_empty collect_arcs then None
     else
       let update_for_arc (src, _dst, _dir, mreq) n =
         let mavail = List.assoc src n.places in
@@ -55,7 +55,7 @@ let do_transition (n : net) (t : name) : net option =
   in
   let provide n : net option =
     let collect_arcs = List.filter (fun (src, _, _, _) -> t = src) n.arcs in
-    if List.length collect_arcs = 0 then None
+    if Util.is_empty collect_arcs then None
     else
       let add_arc (_src, dst, _dir, mprov) n =
         let mdest = List.assoc dst n.places in
@@ -124,7 +124,7 @@ let rec get_silent_resource (pl : name) (t : name) (n : net) : net option =
   if List.mem t (List.assoc pl n.places) then Some n
   else
     let trs = tr_provide pl t n in
-    if List.length trs = 0 then None
+    if Util.is_empty trs then None
       (* No arcs can bring the requried resource *)
     else check_all_trs n trs
 
