@@ -14,6 +14,8 @@ module type MONAD = sig
   val fail : string (*Error.user_error*) -> 'a t
 
   val map : ('a -> 'b t) -> 'a list -> 'b list t
+
+  val from_opt : 'a option -> error:string -> 'a t
 end
 
 type 'a res = ('a, string) result
@@ -52,6 +54,11 @@ module Monad (* : MONAD *) = struct
         let* xs' = map f xs in
         return (x' :: xs')
     | [] -> return []
+
+  let from_opt (v : 'a option) ~(error : string)  : 'a t =
+    match v with
+    | None -> fail error
+    | Some v' -> return v'
 end
 
 module Reader (Q : sig
@@ -91,6 +98,11 @@ struct
         let* xs' = map f xs in
         return (x' :: xs')
     | [] -> return []
+
+  let from_opt (v : 'a option) ~(error : string)  : 'a t =
+    match v with
+    | None -> fail error
+    | Some v' -> return v'
 end
 
 module State (Q : sig
@@ -135,6 +147,12 @@ struct
         let* xs' = map f xs in
         return (x' :: xs')
     | [] -> return []
+
+  let from_opt (v : 'a option) ~(error : string)  : 'a t =
+    match v with
+    | None -> fail error
+    | Some v' -> return v'
+
 end
 
 module ReaderState (Q : sig
@@ -187,4 +205,9 @@ struct
     | [] -> return []
 
   let concat ll = List.concat ll |> return
+
+  let from_opt (v : 'a option) ~(error : string)  : 'a t =
+    match v with
+    | None -> fail error
+    | Some v' -> return v'
 end

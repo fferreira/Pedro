@@ -22,3 +22,5 @@ let rec find_and_remove_fst (f : 'a -> bool) :
 
 let included (l : 'a list) (l' : 'a list) : bool =
   List.for_all (fun x -> List.mem x l') l
+
+let is_empty = function [] -> true | _ -> false

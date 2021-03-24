@@ -19,7 +19,9 @@
  (name pedro)
  (synopsis
    "Some Petri net code")
+ (depends mehir ocamlgraph (nuscr (>= 4.4.4)) calistomitososo)
  (description
    "Some Petri net programs...")
 )
+
 (using menhir 2.0)
