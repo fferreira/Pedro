@@ -17,5 +17,5 @@ transition "P!Q<m1>" "P!Q<m2>" "Q?P<m1>" "Q?P<m2>".
 "0">->"P!Q<m2>"[P]>->"4"[P]>-> "Q?P<m2>"[Q]>->"5"[Q].
 
 
-marking final1 1[P] 2[Q].
+marking finished 1[P] 2[Q].
 marking final2 4[P] 5[Q].
