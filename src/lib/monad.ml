@@ -55,10 +55,8 @@ module Monad (* : MONAD *) = struct
         return (x' :: xs')
     | [] -> return []
 
-  let from_opt (v : 'a option) ~(error : string)  : 'a t =
-    match v with
-    | None -> fail error
-    | Some v' -> return v'
+  let from_opt (v : 'a option) ~(error : string) : 'a t =
+    match v with None -> fail error | Some v' -> return v'
 end
 
 module Reader (Q : sig
@@ -99,10 +97,8 @@ struct
         return (x' :: xs')
     | [] -> return []
 
-  let from_opt (v : 'a option) ~(error : string)  : 'a t =
-    match v with
-    | None -> fail error
-    | Some v' -> return v'
+  let from_opt (v : 'a option) ~(error : string) : 'a t =
+    match v with None -> fail error | Some v' -> return v'
 end
 
 module State (Q : sig
@@ -148,11 +144,8 @@ struct
         return (x' :: xs')
     | [] -> return []
 
-  let from_opt (v : 'a option) ~(error : string)  : 'a t =
-    match v with
-    | None -> fail error
-    | Some v' -> return v'
-
+  let from_opt (v : 'a option) ~(error : string) : 'a t =
+    match v with None -> fail error | Some v' -> return v'
 end
 
 module ReaderState (Q : sig
@@ -206,8 +199,6 @@ struct
 
   let concat ll = List.concat ll |> return
 
-  let from_opt (v : 'a option) ~(error : string)  : 'a t =
-    match v with
-    | None -> fail error
-    | Some v' -> return v'
+  let from_opt (v : 'a option) ~(error : string) : 'a t =
+    match v with None -> fail error | Some v' -> return v'
 end

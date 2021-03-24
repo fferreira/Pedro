@@ -1,17 +1,14 @@
 (* this module generates a petri net representation from the global type *)
 
 open Syntax
-
 module G = Nuscrlib.Gtype
 module N = Nuscrlib.Names
 
 type state =
-  { gen_sym_st : int (* state for the gen_sym function *)
-  ; gamma : (N.RoleName.t * name) list (* maps role names to their last known position *)
-
-  ; net : net (* the net we are building *)
-  }
-
+  { gen_sym_st: int (* state for the gen_sym function *)
+  ; gamma: (N.RoleName.t * name) list
+        (* maps role names to their last known position *)
+  ; net: net (* the net we are building *) }
 
 module Translation = struct
   include Monad.State (struct
@@ -21,14 +18,13 @@ module Translation = struct
   (* generates a fresh name *)
   let gen_sym () : name t =
     let* st = get in
-    let* _ = set {st with gen_sym_st = st.gen_sym_st + 1}  in
-    "_" ^ (string_of_int st.gen_sym_st) |> return
+    let* _ = set {st with gen_sym_st= st.gen_sym_st + 1} in
+    "_" ^ string_of_int st.gen_sym_st |> return
 
   (* looks up a role in gamma *)
   let lookup_gamma (r : N.RoleName.t) : name option t =
     let* st = get in
     List.assoc_opt r st.gamma |> return
-
 
   (* Operations on the net *)
 
@@ -47,10 +43,12 @@ module Translation = struct
     let* st = get in
     let n = st.net in
     let* nm = gen_sym () in
-    let net = {n with
-                transitions = (nm, Silent)::n.transitions
-              ; arcs = (src, nm, PlaceToTransition, [tkn])::(nm, dst, TransitionToPlace, [tkn]):: n.arcs
-              }
+    let net =
+      { n with
+        transitions= (nm, Silent) :: n.transitions
+      ; arcs=
+          (src, nm, PlaceToTransition, [tkn])
+          :: (nm, dst, TransitionToPlace, [tkn]) :: n.arcs }
     in
     set {st with net}
 
@@ -59,12 +57,11 @@ module Translation = struct
     let* st = get in
     let n = st.net in
     let nm = N.RoleName.show r in
-    if List.mem nm n.tokens then
-      return nm
+    if List.mem nm n.tokens then return nm
     else
-      let net = {n with tokens = nm::n.tokens} in
-      let* _ = set {st with net} in return nm
-
+      let net = {n with tokens= nm :: n.tokens} in
+      let* _ = set {st with net} in
+      return nm
 end
 
 module Monadic = struct
@@ -74,22 +71,21 @@ module Monadic = struct
 
   let bring (r : N.RoleName.t) (dst : name) : unit t =
     let* from = lookup_gamma r in
-    let* tk_r = tkr r in (* token for the role *)
+    let* tk_r = tkr r in
+    (* token for the role *)
     match from with
     | None -> return ()
     | Some src -> create_silent_tr src dst tk_r
 
-
-
   (* translation *)
 
-  let translate : G.t ->  Syntax.net t = function
+  let translate : G.t -> Syntax.net t = function
     | G.MessageG (_m, _src, _dst, _cont) -> assert false
     | G.MuG (_x, _vars, _cont) -> assert false
-    | G.TVarG (_x, exprs, _cont) when Util.is_empty exprs-> fail "Unsupported: TVarG cannot have refinements."
+    | G.TVarG (_, exprs, _) when Util.is_empty exprs ->
+        fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (_x, _, _cont) -> assert false
     | G.ChoiceG (_, _) -> assert false
     | EndG -> assert false
     | G.CallG _ -> fail "Unsopported: cannot call sub protocols."
-
 end
