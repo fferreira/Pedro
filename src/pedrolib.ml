@@ -6,4 +6,5 @@ let () =
   Callback.register "load_from_file" Solib.load_from_file ;
   Callback.register "save_to_file" Solib.save_to_file ;
   Callback.register "get_enabled_transitions" Solib.get_enabled_transitions ;
-  Callback.register "do_transition" Solib.do_transition
+  Callback.register "do_transition" Solib.do_transition ;
+  Callback.register "has_finished" Solib.has_finished
