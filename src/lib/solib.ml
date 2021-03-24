@@ -4,12 +4,14 @@ let pn : Syntax.net ref = ref Syntax.empty_net
 
 (* External API *)
 
-let load_from_file (fn : string) : bool =
-  match Lib.parse fn (Stdlib.open_in fn) |> Syntax.validate_net with
-  | Ok n ->
-      pn := n ;
-      true
-  | Error _ -> false
+let load_from_file (fn : string) : string option =
+  try
+    match Lib.parse fn (Stdlib.open_in fn) |> Syntax.validate_net with
+    | Ok n ->
+        pn := n ;
+        None
+    | Error err -> Some err
+  with e -> Some (Printexc.to_string e)
 
 let save_to_file (fn : string) =
   try

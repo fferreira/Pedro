@@ -1,5 +1,5 @@
 (* loads a pedro file from disk, it forgets the previous one if successful *)
-val load_from_file : string -> bool
+val load_from_file : string -> string option
 
 (* saves a pedro file to disk *)
 val save_to_file : string -> bool
