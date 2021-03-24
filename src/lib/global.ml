@@ -12,8 +12,6 @@ type state =
   ; net : net (* the net we are building *)
   }
 
-(* token from role *)
-let tkr (r : N.RoleName.t) : name = N.RoleName.show r
 
 module Translation = struct
   include Monad.State (struct
@@ -30,6 +28,9 @@ module Translation = struct
   let lookup_gamma (r : N.RoleName.t) : name option t =
     let* st = get in
     List.assoc_opt r st.gamma |> return
+
+
+  (* Operations on the net *)
 
   (* asserts that pl is a place in the current net *)
   let assert_place pl =
@@ -52,6 +53,18 @@ module Translation = struct
               }
     in
     set {st with net}
+
+  (* token from role, it adds it if it is missing *)
+  let tkr (r : N.RoleName.t) : name t =
+    let* st = get in
+    let n = st.net in
+    let nm = N.RoleName.show r in
+    if List.mem nm n.tokens then
+      return nm
+    else
+      let net = {n with tokens = nm::n.tokens} in
+      let* _ = set {st with net} in return nm
+
 end
 
 module Monadic = struct
@@ -61,9 +74,10 @@ module Monadic = struct
 
   let bring (r : N.RoleName.t) (dst : name) : unit t =
     let* from = lookup_gamma r in
+    let* tk_r = tkr r in (* token for the role *)
     match from with
     | None -> return ()
-    | Some src -> create_silent_tr src dst (tkr r)
+    | Some src -> create_silent_tr src dst tk_r
 
 
 
