@@ -55,14 +55,14 @@ let generate_ppn (n : net) : PPN.t =
           let srcm = List.assoc src n.places in
           add rest
             (PPN.add_edge_e g
-               (Place (src, srcm), tks, Transition (dst, vis)))
+               (Place (src, srcm), tks, Transition (dst, vis)) )
       | TransitionToPlace ->
           let vis = List.assoc src n.transitions in
           (* this should not fail for well formed nets *)
           let dstm = List.assoc dst n.places in
           add rest
             (PPN.add_edge_e g
-               (Transition (src, vis), tks, Place (dst, dstm))) )
+               (Transition (src, vis), tks, Place (dst, dstm)) ) )
     | [] -> g
   in
   add n.arcs start

@@ -17,7 +17,7 @@ let rec find_and_remove_fst (f : 'a -> bool) :
   | x :: xs when f x -> Some (x, xs)
   | x :: xs ->
       Option.bind (find_and_remove_fst f xs) (fun (y, ys) ->
-          Some (y, x :: ys))
+          Some (y, x :: ys) )
   | [] -> None
 
 let included (l : 'a list) (l' : 'a list) : bool =

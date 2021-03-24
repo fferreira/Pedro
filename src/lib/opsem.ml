@@ -7,13 +7,13 @@ let consume_one_from_marking (m : entity_marking) (t : name) :
 
 (* consumes mreq resources from mavail and returns the new mavail if enough
    resources are present*)
-let rec consume_from_marking (mavail : entity_marking)
-    (mreq : entity_marking) : entity_marking option =
+let rec consume_from_marking (mavail : entity_marking) (mreq : entity_marking)
+    : entity_marking option =
   match mreq with
   | [] -> Some mavail
   | tkn :: tkns ->
       Option.bind (consume_one_from_marking mavail tkn) (fun mavail' ->
-          consume_from_marking mavail' tkns)
+          consume_from_marking mavail' tkns )
 
 (* checks if a transition is enabled *)
 let is_transition_enabled (n : net) (nm : name) : bool =
@@ -42,14 +42,14 @@ let do_transition (n : net) (t : name) : net option =
         let mavail = List.assoc src n.places in
         Option.bind (consume_from_marking mavail mreq) (fun mavail ->
             Some
-              {n with places= (src, mavail) :: List.remove_assoc src n.places})
+              {n with places= (src, mavail) :: List.remove_assoc src n.places} )
       in
       let rec update_all arcs n =
         match arcs with
         | [] -> Some n
         | arc' :: arcs' ->
             Option.bind (update_for_arc arc' n) (fun n' ->
-                update_all arcs' n')
+                update_all arcs' n' )
       in
       update_all collect_arcs n
   in
@@ -105,12 +105,12 @@ let rec get_silent_resource (pl : name) (t : name) (n : net) : net option =
           (* if we can get the resources for the first arc, then continue
              with the rest *)
           Option.bind (get_silent_resource_many src m n) (fun n' ->
-              get_all_requirements rarcs' n')
+              get_all_requirements rarcs' n' )
     in
     Option.bind (get_all_requirements rarcs n) (fun n' ->
         (* this violation is just for sanity checking, because this phase
            cannot fail if we got this far *)
-        do_transition n' tr)
+        do_transition n' tr )
   in
   (* find the first source for the resource *)
   let rec check_all_trs n trs =
@@ -134,7 +134,7 @@ and get_silent_resource_many (pl : name) (m : entity_marking) (n : net) :
   | [] -> Some n
   | tk :: m' ->
       Option.bind (get_silent_resource pl tk n) (fun n' ->
-          get_silent_resource_many pl m' n')
+          get_silent_resource_many pl m' n' )
 
 (* do named transition, gather resources from silent transitions if needed *)
 let do_transition_with_silent (n : net) (t : name) : net option =
@@ -147,7 +147,7 @@ let do_transition_with_silent (n : net) (t : name) : net option =
     let rec bring_resources n = function
       | (src, _, _, m) :: rarcs ->
           Option.bind (get_silent_resource_many src m n) (fun n' ->
-              bring_resources n' rarcs)
+              bring_resources n' rarcs )
       | [] -> Some n
     in
     Option.bind (bring_resources n rarcs) (fun n' -> do_transition n' t)

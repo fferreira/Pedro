@@ -13,3 +13,7 @@ val do_transition : string -> bool
 
 (* says if the net is in a final state *)
 val has_finished : unit -> bool
+
+(* Hash of the commit, used to validate API compatibility when interfacing
+ * with Go *)
+val commit_hash : string

@@ -32,3 +32,5 @@ let do_transition (tr : string) : bool =
   | None -> false
 
 let has_finished () : bool = Opsem.net_matches_marking !pn "finished"
+
+include Version

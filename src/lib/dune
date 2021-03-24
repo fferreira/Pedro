@@ -8,3 +8,10 @@
 (menhir
  (modules parser)
  (flags "--explain"))
+
+(rule
+ (target version.ml)
+ (action
+  (with-stdout-to
+   version.ml
+   (bash "echo let commit_hash = \\\"$(git rev-parse\n HEAD)\\\""))))
