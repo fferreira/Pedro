@@ -10,3 +10,6 @@ val get_enabled_transitions : unit -> string list
 (* tries to do a transition, if it succeeds then it also has the efect of
    updating the markings on the net *)
 val do_transition : string -> bool
+
+(* says if the net is in a final state *)
+val has_finished : unit -> bool

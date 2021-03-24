@@ -14,6 +14,7 @@ type expr =
   | Transition of name * vis
   | Arc of name * name * entity_marking
   | Marking of name * (name * entity_marking) list
+
 (* lists a named list of places and their states *)
 
 (* check the scope of pedro expressions *)
@@ -188,7 +189,7 @@ let sexp_of_net (pn : net) : Sexp.t =
     let tokens =
       List.map
         (fun token_name ->
-          Sexp.List [Sexp.Atom "token"; Sexp.Atom token_name] )
+          Sexp.List [Sexp.Atom "token"; Sexp.Atom token_name])
         tokens
     in
     Sexp.List (Sexp.Atom "tokens" :: tokens)
@@ -201,7 +202,7 @@ let sexp_of_net (pn : net) : Sexp.t =
           Sexp.List
             [ Sexp.Atom "place"
             ; Sexp.Atom place_name
-            ; sexp_of_markings markings ] )
+            ; sexp_of_markings markings ])
         places
     in
     Sexp.List (Sexp.Atom "places" :: places)
@@ -216,7 +217,7 @@ let sexp_of_net (pn : net) : Sexp.t =
             | Silent -> Sexp.Atom "silent"
             | Labelled -> Sexp.Atom "labelled"
           in
-          Sexp.List [Sexp.Atom "transition"; Sexp.Atom trn_name; vis] )
+          Sexp.List [Sexp.Atom "transition"; Sexp.Atom trn_name; vis])
         transitions
     in
     Sexp.List (Sexp.Atom "transitions" :: transitions)
@@ -236,7 +237,7 @@ let sexp_of_net (pn : net) : Sexp.t =
             ; Sexp.Atom frm
             ; Sexp.Atom dst
             ; dir
-            ; sexp_of_markings markings ] )
+            ; sexp_of_markings markings ])
         arcs
     in
     Sexp.List (Sexp.Atom "arcs" :: arcs)

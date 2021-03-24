@@ -30,3 +30,5 @@ let do_transition (tr : string) : bool =
       pn := pn' ;
       true
   | None -> false
+
+let has_finished () : bool = Opsem.net_matches_marking !pn "finished"

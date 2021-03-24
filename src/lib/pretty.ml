@@ -24,7 +24,7 @@ let pp_places pcs =
     List.map
       (function
         | Place (nm, tks) -> (nm, tks)
-        | _ -> failwith "violation can't be this" )
+        | _ -> failwith "violation can't be this")
       pcs
   in
   let print_place (nm, tks) =
@@ -37,7 +37,7 @@ let pp_transitions trs =
     List.map
       (function
         | Transition (nm, vis) -> (nm, vis)
-        | _ -> failwith "violation can't be this" )
+        | _ -> failwith "violation can't be this")
       trs
   in
   let print_transition (nm, vis) =
@@ -52,7 +52,7 @@ let pp_arcs arcs =
     List.map
       (function
         | Arc (src, dst, tks) -> (src, dst, tks)
-        | _ -> failwith "violation can't be this" )
+        | _ -> failwith "violation can't be this")
       arcs
   in
   let rec pp arcs =
@@ -86,7 +86,7 @@ let pp_markings markings =
     List.map
       (function
         | Marking (nm, mks) -> (nm, mks)
-        | _ -> failwith "violation can't be this" )
+        | _ -> failwith "violation can't be this")
       markings
   in
   List.map pp_marking markings' |> String.concat "\n"

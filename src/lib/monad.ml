@@ -72,7 +72,7 @@ struct
       (fun env ->
         match run m env with
         | Ok m' -> run (f m') env
-        | Error err -> Error err )
+        | Error err -> Error err)
 
   let ( >>= ) = bind
 
@@ -110,7 +110,7 @@ struct
       (fun s ->
         match run m s with
         | s, Ok m' -> run (f m') s
-        | s, Error err -> (s, Error err) )
+        | s, Error err -> (s, Error err))
 
   let ( >>= ) = bind
 
@@ -122,7 +122,7 @@ struct
     T
       (fun s ->
         let _, r = run m (f s) in
-        (s, r) )
+        (s, r))
 
   let get = T (fun s -> (s, Ok s))
 
@@ -158,7 +158,7 @@ struct
       (fun (s, r) ->
         match run m (s, r) with
         | s', Ok m' -> run (f m') (s', r)
-        | s', Error err -> (s', Error err) )
+        | s', Error err -> (s', Error err))
 
   let ( >>= ) = bind
 
@@ -170,7 +170,7 @@ struct
     T
       (fun (s, r) ->
         let s', r' = run m (s, f r) in
-        (s', r') )
+        (s', r'))
 
   let ask = T (fun (s, r) -> (s, Ok r))
 
