@@ -14,4 +14,4 @@
  (action
   (with-stdout-to
    version.ml
-   (bash "echo let commit_hash = \\\"$(git rev-parse\n HEAD)\\\""))))
+   (bash "echo let commit_hash = \\\"$(git rev-parse HEAD)\\\""))))
