@@ -1,0 +1,10 @@
+token buy share quote2 C quote1 query B A.
+place _13[B] _14[] _12[A] _10[A] _11[] _9[C] _7[C] _8[] _6[B] _4[A] _5[] _3[B] _1[B] _2[] _0[A].
+transition "A!B<buy>" "A?B<buy>" "C!A<share>" "C?A<share>" "B!C<quote2>" "B?C<quote2>" "B!A<quote1>" "B?A<quote1>" "A!B<query>" "A?B<query>".
+_12>->"A!B<buy>"[A]>->_13[A buy]>->"A?B<buy>"[B buy]>->_14[B].
+_9>->"C!A<share>"[C]>->_10[C share]>->"C?A<share>"[A share]>->_11[A].
+_6>->"B!C<quote2>"[B]>->_7[B quote2]>->"B?C<quote2>"[C quote2]>->_8[C].
+_3>->"B!A<quote1>"[B]>->_4[B quote1]>->"B?A<quote1>"[A quote1]>->_5[A].
+_0>->"A!B<query>"[A]>->_1[A query]>->"A?B<query>"[B query]>->_2[B].
+
+marking[final] _15 _14[B] _13[A] _11[A] _10[C] _8[C] _7[B] _5[A] _4[B] _2[B] _1[A].

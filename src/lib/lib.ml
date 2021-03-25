@@ -35,7 +35,18 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
     | _ -> failwith "Violation: this cannot happen" )
   | _ -> failwith "Violation: this cannot happen"
 
-let main fn =
+let main_scr fn =
+  try
+    let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+    let proto = Nuscrlib.Names.ProtocolName.of_string "TwoBuyer" in
+    let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
+    let net = Global.net_of_global_type gtype |> Result.value ~default: Syntax.empty_net in
+    Syntax.expr_list_of_net net |> Pretty.pp_expr_list |> print_endline
+  with
+  | Nuscrlib.Err.UserError ue -> Nuscrlib.Err.show_user_error ue |> print_endline
+
+
+let main_pdr fn =
   print_endline @@ "//Reading: " ^ fn ;
   let exprs = parse fn (Stdlib.open_in fn) in
   match Syntax.validate_net exprs with
@@ -78,3 +89,9 @@ let main fn =
         |> print_endline )
       else "No first transition." |> print_endline
   | Error err -> "//Alles kaputt!: " ^ err |> print_endline
+
+let main fn =
+  if Filename.check_suffix fn ".pdr" then
+    main_pdr fn
+  else
+    main_scr fn

@@ -5,9 +5,11 @@ open Util
 
 let pp_name nm =
   let is_identifier =
+    try
     match Lexing.from_string nm |> Lexer.token with
     | Parser.NAME nm' -> nm = nm' (* if the whole string is an identifier *)
     | _ -> false
+    with _ -> false
   in
   if is_identifier then nm else "\"" ^ nm ^ "\""
 
@@ -81,7 +83,7 @@ let pp_marking (nm, tag, pcs) =
   let str = List.map print_place pcs |> String.concat " " in
   match tag with
   | None -> "marking " ^ pp_name nm ^ str ^ "."
-  | Some t -> "marking[" ^ t ^ "]" ^ " " ^ pp_name nm ^ str ^ "."
+  | Some t -> "marking[" ^ t ^ "]" ^ " " ^ pp_name nm ^ " " ^ str ^ "."
 
 let pp_markings markings =
   let markings' =

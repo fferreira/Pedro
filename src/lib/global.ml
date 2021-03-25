@@ -9,7 +9,10 @@ type state =
   { gen_sym_st: int (* state for the gen_sym function *)
   ; gamma: (N.RoleName.t * name) list
         (* maps role names to their last known position *)
-  ; net: net (* the net we are building *) }
+  ; net: net (* the net we are building *)
+  }
+
+let initial = { gen_sym_st = 0 ; gamma = [] ; net = empty_net }
 
 (* message definition to be added to the net *)
 type message =
@@ -18,7 +21,8 @@ type message =
   ; r_from: name (* token that is the sending participant *)
   ; r_to: name (* token that is the receiving participant *)
   ; tr_send: name (* transition that is sending transition *)
-  ; tr_recv: name (* transition that is the receiving transition *) }
+  ; tr_recv: name (* transition that is the receiving transition *)
+  }
 
 let transition_name src dst dir msg =
   let act =
@@ -132,9 +136,10 @@ module Translation = struct
     let* p2 = gen_sym in
     let* p3 = gen_sym in
     let* n = get_net in
-    let net =
+     let net =
       { n with
         places= (p2, []) :: (p3, []) :: n.places
+      ; transitions = (msg.tr_send, Labelled) ::(msg.tr_recv, Labelled) :: n.transitions
       ; arcs=
           (msg.p1, msg.tr_send, PlaceToTransition, [msg.r_from])
           ::
@@ -150,7 +155,7 @@ module Translation = struct
   let tkr (r : N.RoleName.t) : name t =
     let* st = get in
     let n = st.net in
-    let nm = N.RoleName.show r in
+    let nm = N.RoleName.user r in
     if List.mem nm n.tokens then return nm
     else
       let net = {n with tokens= nm :: n.tokens} in
@@ -161,7 +166,7 @@ module Translation = struct
   let tkm (r : Nuscrlib.Gtype.message) : name t =
     let* st = get in
     let n = st.net in
-    let nm = N.LabelName.show r.label in
+    let nm = N.LabelName.user r.label in
     if List.mem nm n.tokens then return nm
     else
       let net = {n with tokens= nm :: n.tokens} in
@@ -221,21 +226,29 @@ module Monadic = struct
         let* _ = update_gamma src p2 in
         let* _ = update_gamma dst p3 in
         translate cont
-    | G.MuG (_x, _vars, _cont) -> assert false
+    | G.MuG (_x, _vars, _cont) -> failwith "not implented yet"
     | G.TVarG (_, exprs, _) when Util.is_empty exprs ->
         fail "Unsupported: TVarG cannot have refinements."
-    | G.TVarG (_x, _, _cont) -> assert false
-    | G.ChoiceG (_, _) -> assert false
+    | G.TVarG (_x, _, _cont) -> failwith "not implented yet"
+    | G.ChoiceG (_, _) -> failwith "not implented yet"
     | EndG ->
         let* st = get in
         let parts = List.map fst st.gamma in
         let f p =
           let* tk = tkr p in
-          let* pl = lookup_gamma p in
-          return (tk, Option.to_list pl)
+          let* plopt = lookup_gamma p in
+          let pl = match plopt with
+            | None -> failwith "Violation: p has to be in gamma"
+            | Some pl -> pl
+          in
+          return ( pl, [tk])
         in
         let* m = map f parts in
         let* nm = gen_sym in
         update_marking nm ~tag:(Some "final") m
     | G.CallG _ -> fail "Unsopported: cannot call sub protocols."
 end
+
+let net_of_global_type n =
+  let n', res = Translation.run (Monadic.translate n) initial in
+  match res with Ok _ -> Ok n'.net | Error s -> Error s
