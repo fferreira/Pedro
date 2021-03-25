@@ -1,0 +1,8 @@
+token bye hi B A.
+place _3[] _4[] _1[B] _2[] _0[A].
+transition (_5) "B!A<bye>" "B?A<bye>" "A!B<hi>" "A?B<hi>".
+_1>->_5[A]>->_3[A]>->"B?A<bye>"[A bye]>->_4[A].
+_2>->"B!A<bye>"[B]>->_3[B bye].
+_0>->"A!B<hi>"[A]>->_1[A hi]>->"A?B<hi>"[B hi]>->_2[B].
+
+marking[final] _6 _4[A] _3[B].

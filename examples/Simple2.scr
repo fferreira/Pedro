@@ -1,0 +1,4 @@
+protocol TwoBuyer(role A, role B) {
+  hi from A to B;
+  bye from B to A;
+}
