@@ -176,34 +176,32 @@ let net_matches_marking (n : net) (nm : string) : bool =
       false (* if the net has no "finished" marking it cannot be finished *)
   | Some m -> matches m
 
-
 (* saves the current markings in the net under name nm *)
 let save_marking (n : net) (nm : string) : net =
-  if List.assoc_opt nm n.markings |>Option.is_some then n
+  if List.assoc_opt nm n.markings |> Option.is_some then n
   else
     let m = List.filter (fun (_, l) -> not (Util.is_empty l)) n.markings in
-    {n with markings = (nm, n.places)::m}
+    {n with markings= (nm, n.places) :: m}
 
-(* load a marking, if replace is true the current marking is
-   discarded, if it is false the marking is added to the current
-   marking *)
+(* load a marking, if replace is true the current marking is discarded, if it
+   is false the marking is added to the current marking *)
 let load_marking ?(replace = true) (n : net) (nm : string) : net =
   let clear_current_marking n =
     let pls' = List.map (fun (pl, _) -> (pl, [])) n.places in
-    {n with places = pls'}
+    {n with places= pls'}
   in
   let rec append_marking (n : net) : (name * entity_marking) list -> net =
-    let append_marking_pl (n : net) (pl : name) (m : entity_marking) : net=
+    let append_marking_pl (n : net) (pl : name) (m : entity_marking) : net =
       match List.assoc_opt pl n.places with
-      | None -> failwith "Violation the marking points to a non existing place"
+      | None ->
+          failwith "Violation the marking points to a non existing place"
       | Some m' ->
-         let places = (pl, m' @ m) :: List.remove_assoc nm n.places in
-         {n with places }
+          let places = (pl, m' @ m) :: List.remove_assoc nm n.places in
+          {n with places}
     in
     function
     | [] -> n
-    | (nm, m)::rst -> append_marking_pl (append_marking n rst) nm m
-
+    | (nm, m) :: rst -> append_marking_pl (append_marking n rst) nm m
   in
   let n' = if replace then clear_current_marking n else n in
   match List.assoc_opt nm n'.markings with
