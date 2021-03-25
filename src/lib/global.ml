@@ -100,6 +100,12 @@ module Translation = struct
     in
     set_net {n with places}
 
+  let update_marking nm m =
+    let* n = get_net in
+    let markings = (nm, m) :: List.remove_assoc nm n.markings in
+    set_net {n with markings}
+
+
   (* create a silent transition between two places *)
   let create_silent_tr src dst tkn =
     let* _ = assert_place src in
@@ -182,7 +188,7 @@ module Monadic = struct
 
   (* translation *)
 
-  let rec translate : G.t -> Syntax.net t = function
+  let rec translate : G.t -> unit t = function
     | G.MessageG (m, src, dst, cont) ->
         let* t_src = tkr src in
         (* translate source, as token *)
@@ -221,6 +227,17 @@ module Monadic = struct
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (_x, _, _cont) -> assert false
     | G.ChoiceG (_, _) -> assert false
-    | EndG -> assert false
+
+    | EndG ->
+       let* st = get in
+       let parts = List.map fst st.gamma in
+       let f p =
+         let* tk = tkr p in
+         let* pl =  lookup_gamma p in
+         return (tk, Option.to_list pl)
+       in
+       let* m = map f parts in
+       update_marking "finish" m
+
     | G.CallG _ -> fail "Unsopported: cannot call sub protocols."
 end
