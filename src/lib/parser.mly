@@ -31,12 +31,15 @@ let exprs :=
   | TOKEN ; tks = token+ ; PERIOD ; { List.map (fun x -> Token x) tks }
   | TRANSITION ; trs = transition+ ; PERIOD ; { List.map (fun (x, y) -> Transition (x, y)) trs }
   | PLACE ; pcs = place+ ; PERIOD ; < >
-  | MARKING ; nm = name ; mks = entity_with_tokens+ ; PERIOD ; { [ Marking (nm,  mks) ] }
+  | MARKING ; tag = marking_tag? ;  nm = name ; mks = entity_with_tokens+ ; PERIOD ; { [ Marking (nm,  tag, mks) ] }
   | arcs = arc ; PERIOD ; < >
 
+let marking_tag :=
+  | SQLEFT ; nm = name ; SQRIGHT ; < >
+
 let transition :=
- | nm = name ; { (nm, Labelled) }
- | LPARENS ; nm = name ; RPARENS ; { (nm, Silent) }
+  | nm = name ; { (nm, Labelled) }
+  | LPARENS ; nm = name ; RPARENS ; { (nm, Silent) }
 
 let entity_with_tokens :=
   | nm = name ; SQLEFT ; tks = token* ; SQRIGHT ; < >

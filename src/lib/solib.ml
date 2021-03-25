@@ -31,6 +31,8 @@ let do_transition (tr : string) : bool =
       true
   | None -> false
 
-let has_finished () : bool = Opsem.net_matches_marking !pn "finished"
+let has_finished () : bool =
+  let final_set = Opsem.get_markings_by_tag "final" !pn in
+  List.exists (Opsem.net_matches_marking !pn) final_set
 
 include Version

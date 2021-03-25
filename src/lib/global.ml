@@ -100,9 +100,9 @@ module Translation = struct
     in
     set_net {n with places}
 
-  let update_marking nm m =
+  let update_marking nm ?(tag=None) m =
     let* n = get_net in
-    let markings = (nm, m) :: List.remove_assoc nm n.markings in
+    let markings = (nm, (tag, m)) :: List.remove_assoc nm n.markings in
     set_net {n with markings}
 
   (* create a silent transition between two places *)
@@ -235,6 +235,7 @@ module Monadic = struct
           return (tk, Option.to_list pl)
         in
         let* m = map f parts in
-        update_marking "finish" m
+        let* nm = gen_sym in
+        update_marking nm ~tag:(Some "final") m
     | G.CallG _ -> fail "Unsopported: cannot call sub protocols."
 end

@@ -174,14 +174,14 @@ let net_matches_marking (n : net) (nm : string) : bool =
   match List.assoc_opt nm n.markings with
   | None ->
       false (* if the net has no "finished" marking it cannot be finished *)
-  | Some m -> matches m
+  | Some (_, m) -> matches m
 
 (* saves the current markings in the net under name nm *)
-let save_marking (n : net) (nm : string) : net =
+let save_marking (n : net) ?(tag = None) (nm : string) : net =
   if List.assoc_opt nm n.markings |> Option.is_some then n
   else
-    let m = List.filter (fun (_, l) -> not (Util.is_empty l)) n.markings in
-    {n with markings= (nm, n.places) :: m}
+    let m = List.filter (fun (_, (_, l)) -> not (Util.is_empty l)) n.markings in
+    {n with markings= (nm, (tag, n.places)) :: m}
 
 (* load a marking, if replace is true the current marking is discarded, if it
    is false the marking is added to the current marking *)
@@ -206,4 +206,8 @@ let load_marking ?(replace = true) (n : net) (nm : string) : net =
   let n' = if replace then clear_current_marking n else n in
   match List.assoc_opt nm n'.markings with
   | None -> n
-  | Some m -> append_marking n m
+  | Some (_, m) -> append_marking n m
+
+(* gets the names of all the markings with the specified tag *)
+let get_markings_by_tag (tag : string) (n : net) : name list =
+  n.markings |> List.filter (fun (_, (tag', _)) -> (Some tag) = tag') |> List.map fst

@@ -75,17 +75,19 @@ let pp_arcs arcs =
   in
   pp arcs'
 
-let pp_marking (nm, pcs) =
+let pp_marking (nm, tag, pcs) =
   let print_tkns m = List.map pp_name m |> String.concat " " in
   let print_place (nm, m) = nm ^ "[" ^ print_tkns m ^ "]" in
   let str = List.map print_place pcs |> String.concat " " in
-  "marking " ^ pp_name nm ^ str ^ "."
+  match tag with
+  | None -> "marking " ^ pp_name nm ^ str ^ "."
+  | Some t -> "marking[" ^ t ^ "]" ^ " " ^ pp_name nm ^ str ^ "."
 
 let pp_markings markings =
   let markings' =
     List.map
       (function
-        | Marking (nm, mks) -> (nm, mks)
+        | Marking (nm, tag, mks) -> (nm, tag, mks)
         | _ -> failwith "violation can't be this" )
       markings
   in
