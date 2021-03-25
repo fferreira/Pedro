@@ -52,11 +52,12 @@ module Translation = struct
   (* looks up a role in gamma *)
   let lookup_gamma (r : N.RoleName.t) : name option t =
     let* st = get in
-    List.assoc_opt r st.gamma |> return
+    List.find_map (fun (r', pl) -> if N.RoleName.equal r r' then Some pl else None) st.gamma |> return
 
   let update_gamma (r : N.RoleName.t) (nm : name) : unit t =
     let* st = get in
-    set {st with gamma= (r, nm) :: List.remove_assoc r st.gamma}
+    let gamma' = List.filter (fun (r', _) -> if N.RoleName.equal r r' then false else true) st.gamma in
+    set {st with gamma= (r, nm) :: gamma'}
 
   (* Operations on the net *)
 
@@ -194,33 +195,33 @@ module Monadic = struct
 
   let rec translate : G.t -> unit t = function
     | G.MessageG (m, src, dst, cont) ->
-        let* t_src = tkr src in
+        let* r_from = tkr src in
         (* translate source, as token *)
-        let* t_dst = tkr dst in
+        let* r_to = tkr dst in
         (* translate destination, as token *)
-        let* l = tkm m in
+        let* label = tkm m in
         (* translate label *)
         let* p1_opt = lookup_gamma src in
         let* p1 =
           match p1_opt with
           | None ->
               let* p1 = gen_sym in
-              let* _ = add_place p1 [t_src] in
+              let* _ = add_place p1 [r_from] in
               return p1
           | Some p1 -> return p1
         in
         let msg =
           { p1
-          ; label= l
-          ; r_from= t_src
-          ; r_to= t_dst
-          ; tr_send= transition_name t_src t_dst PlaceToTransition l
-          ; tr_recv= transition_name t_src t_dst TransitionToPlace l }
+          ; label
+          ; r_from
+          ; r_to
+          ; tr_send= transition_name r_from r_to PlaceToTransition label
+          ; tr_recv= transition_name r_from r_to TransitionToPlace label }
         in
         let* p2, p3 = create_messge msg in
-        let* t_src_exists = bring src p2 in
+        let* r_to_exists = bring dst p2 in
         let* _ =
-          if not t_src_exists then add_tokens_to_place p2 [t_dst]
+          if not r_to_exists then add_tokens_to_place p2 [r_to]
           else return ()
         in
         let* _ = update_gamma src p2 in

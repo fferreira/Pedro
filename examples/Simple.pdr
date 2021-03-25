@@ -1,0 +1,7 @@
+token buy B share A C.
+place _3[B] _4[] _1[A] _2[] _0[C].
+transition "A!B<buy>" "A?B<buy>" "C!A<share>" "C?A<share>".
+_2>->"A!B<buy>"[A]>->_3[A buy]>->"A?B<buy>"[B buy]>->_4[B].
+_0>->"C!A<share>"[C]>->_1[C share]>->"C?A<share>"[A share]>->_2[A].
+
+marking[final] _5 _4[B] _3[A] _1[C].

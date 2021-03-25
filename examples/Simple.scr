@@ -1,0 +1,4 @@
+protocol TwoBuyer(role A, role B, role C) {
+  share from C to A;
+  buy from A to B;
+}
