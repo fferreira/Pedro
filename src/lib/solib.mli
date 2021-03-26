@@ -1,6 +1,6 @@
 (* imports a scribble style file using the nuscr library, if forgets the
    previous one only if successful *)
-val import_nuscr_file : string -> string option
+val import_nuscr_file : string -> string -> string option
 
 (* loads a pedro file from disk, it forgets the previous one only if
    successful *)

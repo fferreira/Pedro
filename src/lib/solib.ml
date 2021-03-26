@@ -4,10 +4,10 @@ let pn : Syntax.net ref = ref Syntax.empty_net
 
 (* External API *)
 
-let import_nuscr_file (fn : string) : string option =
+let import_nuscr_file (fn : string) (proto_name : string) : string option =
   try
     let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
-    let proto = Nuscrlib.Names.ProtocolName.of_string "TwoBuyer" in
+    let proto = Nuscrlib.Names.ProtocolName.of_string proto_name in
     let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
     pn := Global.net_of_global_type gtype |> Result.value ~default:!pn ;
     None
