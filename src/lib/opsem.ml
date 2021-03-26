@@ -180,7 +180,9 @@ let net_matches_marking (n : net) (nm : string) : bool =
 let save_marking (n : net) ?(tag = None) (nm : string) : net =
   if List.assoc_opt nm n.markings |> Option.is_some then n
   else
-    let m = List.filter (fun (_, (_, l)) -> not (Util.is_empty l)) n.markings in
+    let m =
+      List.filter (fun (_, (_, l)) -> not (Util.is_empty l)) n.markings
+    in
     {n with markings= (nm, (tag, n.places)) :: m}
 
 (* load a marking, if replace is true the current marking is discarded, if it
@@ -210,4 +212,6 @@ let load_marking ?(replace = true) (n : net) (nm : string) : net =
 
 (* gets the names of all the markings with the specified tag *)
 let get_markings_by_tag (tag : string) (n : net) : name list =
-  n.markings |> List.filter (fun (_, (tag', _)) -> (Some tag) = tag') |> List.map fst
+  n.markings
+  |> List.filter (fun (_, (tag', _)) -> Some tag = tag')
+  |> List.map fst

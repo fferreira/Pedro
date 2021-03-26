@@ -9,10 +9,9 @@ type state =
   { gen_sym_st: int (* state for the gen_sym function *)
   ; gamma: (N.RoleName.t * name) list
         (* maps role names to their last known position *)
-  ; net: net (* the net we are building *)
-  }
+  ; net: net (* the net we are building *) }
 
-let initial = { gen_sym_st = 0 ; gamma = [] ; net = empty_net }
+let initial = {gen_sym_st= 0; gamma= []; net= empty_net}
 
 (* message definition to be added to the net *)
 type message =
@@ -21,8 +20,7 @@ type message =
   ; r_from: name (* token that is the sending participant *)
   ; r_to: name (* token that is the receiving participant *)
   ; tr_send: name (* transition that is sending transition *)
-  ; tr_recv: name (* transition that is the receiving transition *)
-  }
+  ; tr_recv: name (* transition that is the receiving transition *) }
 
 let transition_name src dst dir msg =
   let act =
@@ -52,11 +50,18 @@ module Translation = struct
   (* looks up a role in gamma *)
   let lookup_gamma (r : N.RoleName.t) : name option t =
     let* st = get in
-    List.find_map (fun (r', pl) -> if N.RoleName.equal r r' then Some pl else None) st.gamma |> return
+    List.find_map
+      (fun (r', pl) -> if N.RoleName.equal r r' then Some pl else None)
+      st.gamma
+    |> return
 
   let update_gamma (r : N.RoleName.t) (nm : name) : unit t =
     let* st = get in
-    let gamma' = List.filter (fun (r', _) -> if N.RoleName.equal r r' then false else true) st.gamma in
+    let gamma' =
+      List.filter
+        (fun (r', _) -> if N.RoleName.equal r r' then false else true)
+        st.gamma
+    in
     set {st with gamma= (r, nm) :: gamma'}
 
   (* Operations on the net *)
@@ -105,7 +110,7 @@ module Translation = struct
     in
     set_net {n with places}
 
-  let update_marking nm ?(tag=None) m =
+  let update_marking nm ?(tag = None) m =
     let* n = get_net in
     let markings = (nm, (tag, m)) :: List.remove_assoc nm n.markings in
     set_net {n with markings}
@@ -137,10 +142,11 @@ module Translation = struct
     let* p2 = gen_sym in
     let* p3 = gen_sym in
     let* n = get_net in
-     let net =
+    let net =
       { n with
         places= (p2, []) :: (p3, []) :: n.places
-      ; transitions = (msg.tr_send, Labelled) ::(msg.tr_recv, Labelled) :: n.transitions
+      ; transitions=
+          (msg.tr_send, Labelled) :: (msg.tr_recv, Labelled) :: n.transitions
       ; arcs=
           (msg.p1, msg.tr_send, PlaceToTransition, [msg.r_from])
           ::
@@ -238,11 +244,12 @@ module Monadic = struct
         let f p =
           let* tk = tkr p in
           let* plopt = lookup_gamma p in
-          let pl = match plopt with
+          let pl =
+            match plopt with
             | None -> failwith "Violation: p has to be in gamma"
             | Some pl -> pl
           in
-          return ( pl, [tk])
+          return (pl, [tk])
         in
         let* m = map f parts in
         let* nm = gen_sym in

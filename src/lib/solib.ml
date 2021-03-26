@@ -4,6 +4,17 @@ let pn : Syntax.net ref = ref Syntax.empty_net
 
 (* External API *)
 
+let import_nuscr_file (fn : string) : string option =
+  try
+    let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+    let proto = Nuscrlib.Names.ProtocolName.of_string "TwoBuyer" in
+    let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
+    pn := Global.net_of_global_type gtype |> Result.value ~default:!pn ;
+    None
+  with
+  | Nuscrlib.Err.UserError ue -> Some (Nuscrlib.Err.show_user_error ue)
+  | e -> Some (Printexc.to_string e)
+
 let load_from_file (fn : string) : string option =
   try
     match Lib.parse fn (Stdlib.open_in fn) |> Syntax.validate_net with

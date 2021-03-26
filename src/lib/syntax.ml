@@ -13,7 +13,7 @@ type expr =
   | Place of name * entity_marking
   | Transition of name * vis
   | Arc of name * name * entity_marking
-  | Marking of name * name option *  (name * entity_marking) list
+  | Marking of name * name option * (name * entity_marking) list
 
 (* lists a named list of places and their states *)
 
@@ -154,14 +154,14 @@ module Monadic = struct
           if ep then add_arc src dst TransitionToPlace tks'
           else dst ^ " is not a place!" |> fail
         else src ^ " is neither a place nor a transition." |> fail
-    | Marking (nm, tag,  mks) ->
+    | Marking (nm, tag, mks) ->
         let f (pl, tks) =
           let* ep = exists_place pl in
           let* tks' = process_tkn_list tks in
           if ep then return (pl, tks') else pl ^ " is not a state." |> fail
         in
         let* mks' = map f mks in
-        add_marking (nm, (tag,  mks'))
+        add_marking (nm, (tag, mks'))
 
   let check (es : expr list) : unit t =
     let* _ = Scoped.map check_expr es in
@@ -177,7 +177,9 @@ let expr_list_of_net (pn : net) : expr list =
   let places = List.map (fun (n, m) -> Place (n, m)) pn.places in
   let trs = List.map (fun (n, vis) -> Transition (n, vis)) pn.transitions in
   let arcs = List.map (fun (src, dst, _, m) -> Arc (src, dst, m)) pn.arcs in
-  let ms = List.map (fun (nm, (tag, mks)) -> Marking (nm, tag, mks)) pn.markings in
+  let ms =
+    List.map (fun (nm, (tag, mks)) -> Marking (nm, tag, mks)) pn.markings
+  in
   tkns @ places @ trs @ arcs @ ms
 
 let sexp_of_net (pn : net) : Sexp.t =
