@@ -11,6 +11,7 @@
 
 (rule
  (target version.ml)
+ (deps (universe))
  (action
   (with-stdout-to
    version.ml
