@@ -41,8 +41,9 @@ let main_scr fn =
     let proto = Nuscrlib.Names.ProtocolName.of_string "TwoBuyer" in
     let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
     let net =
-      Global.net_of_global_type gtype
-      |> Result.value ~default:Syntax.empty_net
+      match Global.net_of_global_type gtype with
+      | Ok net -> net
+      | Error err -> failwith err
     in
     Syntax.expr_list_of_net net |> Pretty.pp_expr_list |> print_endline
   with Nuscrlib.Err.UserError ue ->

@@ -33,6 +33,14 @@ module Translation = struct
     type s = state
   end)
 
+  let get_gamma =
+    let* st = get in
+    st.gamma |> return
+
+  let set_gamma gamma =
+    let* st = get in
+    set {st with gamma}
+
   let get_net =
     let* st = get in
     st.net |> return
@@ -237,7 +245,27 @@ module Monadic = struct
     | G.TVarG (_, exprs, _) when Util.is_empty exprs ->
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (_x, _, _cont) -> failwith "not implented yet"
-    | G.ChoiceG (_, _) -> failwith "not implented yet"
+    | G.ChoiceG (r, conts) ->
+        let add_cont cont =
+          let* gamma = get_gamma in
+          let* pl = gen_sym in
+          let* _ = add_place pl [] in
+          let* cond = bring r pl in assert cond ; (* always true or violation *)
+          let* _ = update_gamma r pl in
+          let* _ = translate cont in
+          set_gamma gamma (* We could use a reader monad to avoid this, but this is simpler for now *)
+        in
+        let* plo = lookup_gamma r in
+        let* _ = match plo with
+        | Some _ -> return ()
+        | None ->
+          let* pl = gen_sym in
+          let* tok = tkr r in
+          add_place pl [tok]
+        in
+
+        let* _ = map add_cont conts in
+        return ()
     | EndG ->
         let* st = get in
         let parts = List.map fst st.gamma in

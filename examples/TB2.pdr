@@ -1,0 +1,18 @@
+token cancel buy share B quote query S A.
+place _19[] _20[] _17[] _13[] _14[] _11[] _8[] _9[] _6[B] _7[] _3[] _4[] _1[S] _2[] _0[A].
+transition (_21) "A!S<cancel>" "A?S<cancel>" (_18) (_15) "A!S<buy>" "A?S<buy>" (_12) (_10) "B!A<share>" "B?A<share>" "S!B<quote>" "S?B<quote>" (_5) "S!A<quote>" "S?A<quote>" "A!S<query>" "A?S<query>".
+_6>->_21[S]>->_19[S]>->"A?S<cancel>"[S cancel]>->_20[S].
+_17>->"A!S<cancel>"[A]>->_19[A cancel].
+_9>->_18[A]>->_17[A].
+_6>->_15[S]>->_13[S]>->"A?S<buy>"[S buy]>->_14[S].
+_11>->"A!S<buy>"[A]>->_13[A buy].
+_9>->_12[A]>->_11[A].
+_4>->_10[A]>->_8[A]>->"B?A<share>"[A share]>->_9[A].
+_7>->"B!A<share>"[B]>->_8[B share].
+_3>->"S!B<quote>"[S]>->_6[S quote]>->"S?B<quote>"[B quote]>->_7[B].
+_1>->_5[A]>->_3[A]>->"S?A<quote>"[A quote]>->_4[A].
+_2>->"S!A<quote>"[S]>->_3[S quote].
+_0>->"A!S<query>"[A]>->_1[A query]>->"A?S<query>"[S query]>->_2[S].
+
+marking[final] _22 _20[S] _19[A] _8[B].
+marking[final] _16 _14[S] _13[A] _8[B].
