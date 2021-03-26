@@ -20,7 +20,8 @@ let pp_tokens tks =
       (function Token nm -> nm | _ -> failwith "violation can't be this")
       tks
   in
-  "token " ^ String.concat " " toks ^ "."
+  if Util.is_empty toks then ""
+  else "token " ^ String.concat " " toks ^ "."
 
 let pp_places pcs =
   let pcs' =
@@ -33,7 +34,8 @@ let pp_places pcs =
   let print_place (nm, tks) =
     pp_name nm ^ "[" ^ (String.concat " " @@ List.map pp_name tks) ^ "]"
   in
-  "place " ^ String.concat " " (List.map print_place pcs') ^ "."
+  if Util.is_empty pcs then ""
+  else "place " ^ String.concat " " (List.map print_place pcs') ^ "."
 
 let pp_transitions trs =
   let trs' =
@@ -48,7 +50,8 @@ let pp_transitions trs =
     | Labelled -> pp_name nm
     | Silent -> "(" ^ pp_name nm ^ ")"
   in
-  "transition " ^ (String.concat " " @@ List.map print_transition trs') ^ "."
+  if Util.is_empty trs then ""
+  else "transition " ^ (String.concat " " @@ List.map print_transition trs') ^ "."
 
 let pp_arcs arcs =
   let arcs' =
