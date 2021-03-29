@@ -20,7 +20,13 @@ let rec find_and_remove_fst (f : 'a -> bool) :
           Some (y, x :: ys) )
   | [] -> None
 
+(* true if l is included in l' *)
 let included (l : 'a list) (l' : 'a list) : bool =
   List.for_all (fun x -> List.mem x l') l
 
+(* true if a list is empty *)
 let is_empty = function [] -> true | _ -> false
+
+(* add x to l if x is not already in l *)
+let uniq_cons x l =
+  if List.mem x l then l else x::l

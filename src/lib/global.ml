@@ -4,6 +4,21 @@ open Syntax
 module G = Nuscrlib.Gtype
 module N = Nuscrlib.Names
 
+(* utilities *)
+
+let rec participants (n : G.t) : N.RoleName.t list =
+  let uc = Util.uniq_cons in
+  match n with
+   | G.MessageG (_, src, dst, cont) ->  uc src @@ uc dst @@ participants cont
+   | G.MuG (_, vars, _) when not (Util.is_empty vars) ->  failwith "Error: Unsupported refined protocol"
+   | G.MuG (_, _, cont) -> participants cont
+   | G.TVarG (_, exprs, _)  when not (Util.is_empty exprs) ->  failwith "Error: Unsupported refined protocol"
+   | G.TVarG (_, _, _) -> [] (* ALERT there is a continuation *)
+   | G.ChoiceG (r, conts) -> uc r (Util.uniq @@ List.concat @@ List.map participants conts)
+   | G.EndG -> []
+   | G.CallG (_, _, _, _) -> assert false
+
+
 (* monadic state *)
 type state =
   { gen_sym_st: int (* state for the gen_sym function *)
@@ -241,8 +256,12 @@ module Monadic = struct
         let* _ = update_gamma src p2 in
         let* _ = update_gamma dst p3 in
         translate cont
-    | G.MuG (_x, _vars, _cont) -> failwith "not implented yet"
-    | G.TVarG (_, exprs, _) when Util.is_empty exprs ->
+    | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
+        fail "Unsupported: MuG cannot have refinements."
+
+    | G.MuG (_x, _, _cont) -> failwith "not implented yet"
+
+    | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (_x, _, _cont) -> failwith "not implented yet"
     | G.ChoiceG (r, conts) ->
