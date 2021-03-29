@@ -22,7 +22,7 @@ global protocol Test2(role C, role S) {
   }
 }
 
-/*
+
 global protocol Test3(role X, role Y) {
   rec SEND {
     choice at X {
@@ -41,4 +41,3 @@ global protocol Test3(role X, role Y) {
     }
   }
 }
-*/
