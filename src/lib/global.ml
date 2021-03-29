@@ -241,13 +241,32 @@ module Monadic = struct
   (* base operations *)
 
   let bring (r : N.RoleName.t) (dst : name) : bool t =
+
+    let trx_exists (r: name) (src : name) (dst : name) : bool t =
+      let* n = get_net in
+      let is_silent trx =
+        try
+          List.assoc trx n.transitions = Silent
+        with
+          _ -> false
+      in
+      let trx_ex =
+        Option.bind (List.find_opt (fun (s, _, _, m) ->
+                         s = src && List.mem r m) n.arcs) (fun (_, trx, _, _) ->
+            if is_silent trx then
+              List.find_opt (fun (s, d, _, m) -> s = trx && d = dst && List.mem r m) n.arcs
+              else None) |> Option.is_some
+      in
+      return trx_ex
+    in
     let* from = lookup_gamma r in
     let* tk_r = tkr r in
     (* token for the role *)
     match from with
     | None -> return false (* no bringing possible *)
     | Some src ->
-       if src = dst then return true
+       let* trx_ex = trx_exists tk_r src dst in
+       if src = dst || trx_ex then return true
        else
          let* _ = create_silent_tr src dst tk_r in
          return true
