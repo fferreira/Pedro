@@ -38,14 +38,27 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
 let main_scr fn =
   try
     let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
-    let proto = Nuscrlib.Names.ProtocolName.of_string "TwoBuyer" in
-    let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
-    let net =
+    let protocol_names = List.map fst @@ Nuscrlib.Lib.enumerate scr in
+    let gtypes =
+      List.map
+        (fun proto -> Nuscrlib.Lib.get_global_type scr ~protocol:proto)
+        protocol_names
+    in
+    (* let proto = Nuscrlib.Names.ProtocolName.of_string "Test" in
+     * let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in *)
+    let get_net gtype =
       match Global.net_of_global_type gtype with
       | Ok net -> net
       | Error err -> failwith err
     in
-    Syntax.expr_list_of_net net |> Pretty.pp_expr_list |> print_endline
+    List.iter
+      (fun (nm, gt) ->
+        "--- Protocol: " ^ nm ^ " ---" |> print_endline ;
+        Syntax.expr_list_of_net (get_net gt)
+        |> Pretty.pp_expr_list |> print_endline )
+      (List.combine
+         (List.map Nuscrlib.Names.ProtocolName.user protocol_names)
+         gtypes )
   with Nuscrlib.Err.UserError ue ->
     Nuscrlib.Err.show_user_error ue |> print_endline
 
