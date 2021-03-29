@@ -247,8 +247,10 @@ module Monadic = struct
     match from with
     | None -> return false (* no bringing possible *)
     | Some src ->
-        let* _ = create_silent_tr src dst tk_r in
-        return true
+       if src = dst then return true
+       else
+         let* _ = create_silent_tr src dst tk_r in
+         return true
   (* brought the token *)
 
   (* translation *)
