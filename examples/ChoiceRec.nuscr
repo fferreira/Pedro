@@ -10,6 +10,7 @@ global protocol Test(role C, role S, role D) {
   }
 }
 
+
 global protocol Test2(role C, role S) {
   rec X {
     m() from C to S;
@@ -21,6 +22,7 @@ global protocol Test2(role C, role S) {
   }
 }
 
+/*
 global protocol Test3(role X, role Y) {
   rec SEND {
     choice at X {
@@ -39,3 +41,4 @@ global protocol Test3(role X, role Y) {
     }
   }
 }
+*/

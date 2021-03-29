@@ -28,5 +28,4 @@ let included (l : 'a list) (l' : 'a list) : bool =
 let is_empty = function [] -> true | _ -> false
 
 (* add x to l if x is not already in l *)
-let uniq_cons x l =
-  if List.mem x l then l else x::l
+let uniq_cons x l = if List.mem x l then l else x :: l

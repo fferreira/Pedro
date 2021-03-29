@@ -9,24 +9,30 @@ module N = Nuscrlib.Names
 let rec participants (n : G.t) : N.RoleName.t list =
   let uc = Util.uniq_cons in
   match n with
-   | G.MessageG (_, src, dst, cont) ->  uc src @@ uc dst @@ participants cont
-   | G.MuG (_, vars, _) when not (Util.is_empty vars) ->  failwith "Error: Unsupported refined protocol"
-   | G.MuG (_, _, cont) -> participants cont
-   | G.TVarG (_, exprs, _)  when not (Util.is_empty exprs) ->  failwith "Error: Unsupported refined protocol"
-   | G.TVarG (_, _, _) -> [] (* ALERT there is a continuation *)
-   | G.ChoiceG (r, conts) -> uc r (Util.uniq @@ List.concat @@ List.map participants conts)
-   | G.EndG -> []
-   | G.CallG (_, _, _, _) -> assert false
-
+  | G.MessageG (_, src, dst, cont) -> uc src @@ uc dst @@ participants cont
+  | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
+      failwith "Error: Unsupported refined protocol"
+  | G.MuG (_, _, cont) -> participants cont
+  | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
+      failwith "Error: Unsupported refined protocol"
+  | G.TVarG (_, _, _) -> []
+  | G.ChoiceG (r, conts) ->
+      uc r (Util.uniq @@ List.concat @@ List.map participants conts)
+  | G.EndG -> []
+  | G.CallG (src, _, roles, cont) ->
+      uc src (Util.uniq @@ roles @ participants cont)
 
 (* monadic state *)
 type state =
   { gen_sym_st: int (* state for the gen_sym function *)
   ; gamma: (N.RoleName.t * name) list
         (* maps role names to their last known position *)
+  ; delta: (N.TypeVariableName.t * (N.RoleName.t * name) list) list
+        (* maps type variables to a map of roles to places to go when the
+           variable is found *)
   ; net: net (* the net we are building *) }
 
-let initial = {gen_sym_st= 0; gamma= []; net= empty_net}
+let initial = {gen_sym_st= 0; gamma= []; delta= []; net= empty_net}
 
 (* message definition to be added to the net *)
 type message =
@@ -55,6 +61,14 @@ module Translation = struct
   let set_gamma gamma =
     let* st = get in
     set {st with gamma}
+
+  let get_delta =
+    let* st = get in
+    st.delta |> return
+
+  let set_delta delta =
+    let* st = get in
+    set {st with delta}
 
   let get_net =
     let* st = get in
@@ -86,6 +100,23 @@ module Translation = struct
         st.gamma
     in
     set {st with gamma= (r, nm) :: gamma'}
+
+
+  let lookup_delta (r : N.TypeVariableName.t) : (N.RoleName.t * name) list option t =
+    let* st = get in
+    List.find_map
+      (fun (r', pl) -> if N.TypeVariableName.equal r r' then Some pl else None)
+      st.delta
+    |> return
+
+  let update_delta (r : N.TypeVariableName.t) (dict : (N.RoleName.t * name) list) : unit t =
+    let* st = get in
+    let delta' =
+      List.filter
+        (fun (r', _) -> if N.TypeVariableName.equal r r' then false else true)
+        st.delta
+    in
+    set {st with delta= (r, dict) :: delta'}
 
   (* Operations on the net *)
 
@@ -258,31 +289,57 @@ module Monadic = struct
         translate cont
     | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
         fail "Unsupported: MuG cannot have refinements."
+    | G.MuG (x, _, cont) ->
+        let parts = participants cont in
+        let* pl = gen_sym in
+        let* _ = add_place pl [] in
+        (* if a participant is new, do we add it to this place? and in gamma? *)
+        let bring_or_create pl part =
+          let* part_exists = bring part pl in
+          let* _ = update_gamma part pl in
+          let* tok = tkr part in
+          if not part_exists then add_tokens_to_place pl [tok] else return ()
+        in
+        let* _ = map (bring_or_create pl) parts in
 
-    | G.MuG (_x, _, _cont) -> failwith "not implented yet"
+        let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
+        translate cont
 
     | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
         fail "Unsupported: TVarG cannot have refinements."
-    | G.TVarG (_x, _, _cont) -> failwith "not implented yet"
+    | G.TVarG (x, _, _) ->
+       let* part_pls = lookup_delta x in
+       let* part_pls' = match part_pls with
+           | Some ppls -> return ppls
+           | None -> fail @@ "Variable: " ^ N.TypeVariableName.user x ^ " not found! (" ^ N.TypeVariableName.show x ^ ")"
+       in
+       let* _ = map (fun (p, pl) -> bring p pl) part_pls' in
+       return ()
+
+
     | G.ChoiceG (r, conts) ->
         let add_cont cont =
           let* gamma = get_gamma in
           let* pl = gen_sym in
           let* _ = add_place pl [] in
-          let* cond = bring r pl in assert cond ; (* always true or violation *)
+          let* cond = bring r pl in
+          assert cond ;
+          (* always true or violation *)
           let* _ = update_gamma r pl in
           let* _ = translate cont in
-          set_gamma gamma (* We could use a reader monad to avoid this, but this is simpler for now *)
+          set_gamma gamma
+          (* We could use a reader monad to avoid this, but this is simpler
+             for now *)
         in
         let* plo = lookup_gamma r in
-        let* _ = match plo with
-        | Some _ -> return ()
-        | None ->
-          let* pl = gen_sym in
-          let* tok = tkr r in
-          add_place pl [tok]
+        let* _ =
+          match plo with
+          | Some _ -> return ()
+          | None ->
+              let* pl = gen_sym in
+              let* tok = tkr r in
+              add_place pl [tok]
         in
-
         let* _ = map add_cont conts in
         return ()
     | EndG ->
@@ -301,7 +358,10 @@ module Monadic = struct
         let* m = map f parts in
         let* nm = gen_sym in
         update_marking nm ~tag:(Some "final") m
-    | G.CallG _ -> fail "Unsopported: cannot call sub protocols."
+    | G.CallG _ ->
+        fail
+          "Unsopported: cannot call sub protocols. (In the future we could \
+           inline them)"
 end
 
 let net_of_global_type n =
