@@ -35,56 +35,52 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
     | _ -> failwith "Violation: this cannot happen" )
   | _ -> failwith "Violation: this cannot happen"
 
-type fmt
-  = Nuscr
-  | Pedro
-  | Dot
-  | Sexp
-  | Info
+type fmt = Nuscr | Pedro | Dot | Sexp | Info
 
 let main (fmt_in : fmt) (fmt_out : fmt) fn =
   let inp : (string * Syntax.net) list =
     match fmt_in with
-    | Pedro ->
-         let exprs = parse fn (Stdlib.open_in fn) in
-         begin match Syntax.validate_net exprs with
-         | Ok net -> [fn, net]
-         | Error err -> failwith err
-         end
-    | Nuscr ->
-       begin try
-           let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
-           let protocol_names = List.map fst @@ Nuscrlib.Lib.enumerate scr in
-           let gtypes =
-             let scr_to_net proto =
-               match Nuscrlib.Lib.get_global_type scr ~protocol:proto |> Global.net_of_global_type with
-               | Ok net -> net
-               | Error err -> failwith err
-             in
-             List.map
-               (fun proto -> Global.N.ProtocolName.user proto, scr_to_net proto)
-               protocol_names
-           in
-           gtypes
-         with Nuscrlib.Err.UserError ue -> Nuscrlib.Err.show_user_error ue |> failwith
-       end
+    | Pedro -> (
+        let exprs = parse fn (Stdlib.open_in fn) in
+        match Syntax.validate_net exprs with
+        | Ok net -> [(fn, net)]
+        | Error err -> failwith err )
+    | Nuscr -> (
+      try
+        let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+        let protocol_names = List.map fst @@ Nuscrlib.Lib.enumerate scr in
+        let gtypes =
+          let scr_to_net proto =
+            match
+              Nuscrlib.Lib.get_global_type scr ~protocol:proto
+              |> Global.net_of_global_type
+            with
+            | Ok net -> net
+            | Error err -> failwith err
+          in
+          List.map
+            (fun proto ->
+              (Global.N.ProtocolName.user proto, scr_to_net proto) )
+            protocol_names
+        in
+        gtypes
+      with Nuscrlib.Err.UserError ue ->
+        Nuscrlib.Err.show_user_error ue |> failwith )
     | _ -> failwith "input format not supported"
   in
-
   let out (nm, net) =
-    "**** " ^ nm ^ "****\n" ^
-      match fmt_out with
-      | Nuscr -> failwith "output format not supported"
-      | Pedro -> net |> Syntax.expr_list_of_net |> Pretty.pp_expr_list
-      | Dot -> Pn.generate_ppn net |> Pn.generate_dot
-      | Sexp -> Syntax.sexp_of_net net |> Sexplib.Sexp.to_string
-      | Info ->
-         "----Information----\n"
-         ^ "Enabled transitions: "
-         ^ (Opsem.enabled_transitions net |> String.concat " ") ^ "\n"
-         ^ "Enabled transitions (with silent): "
-         ^ (Opsem.enabled_transitions_with_silent net |> String.concat " ")
+    "**** " ^ nm ^ "****\n"
+    ^
+    match fmt_out with
+    | Nuscr -> failwith "output format not supported"
+    | Pedro -> net |> Syntax.expr_list_of_net |> Pretty.pp_expr_list
+    | Dot -> Pn.generate_ppn net |> Pn.generate_dot
+    | Sexp -> Syntax.sexp_of_net net |> Sexplib.Sexp.to_string
+    | Info ->
+        "----Information----\n" ^ "Enabled transitions: "
+        ^ (Opsem.enabled_transitions net |> String.concat " ")
+        ^ "\n" ^ "Enabled transitions (with silent): "
+        ^ (Opsem.enabled_transitions_with_silent net |> String.concat " ")
   in
-
   let str : string = String.concat "\n" @@ List.map out inp in
   print_endline str

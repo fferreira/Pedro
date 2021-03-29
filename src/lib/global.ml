@@ -101,15 +101,17 @@ module Translation = struct
     in
     set {st with gamma= (r, nm) :: gamma'}
 
-
-  let lookup_delta (r : N.TypeVariableName.t) : (N.RoleName.t * name) list option t =
+  let lookup_delta (r : N.TypeVariableName.t) :
+      (N.RoleName.t * name) list option t =
     let* st = get in
     List.find_map
-      (fun (r', pl) -> if N.TypeVariableName.equal r r' then Some pl else None)
+      (fun (r', pl) ->
+        if N.TypeVariableName.equal r r' then Some pl else None )
       st.delta
     |> return
 
-  let update_delta (r : N.TypeVariableName.t) (dict : (N.RoleName.t * name) list) : unit t =
+  let update_delta (r : N.TypeVariableName.t)
+      (dict : (N.RoleName.t * name) list) : unit t =
     let* st = get in
     let delta' =
       List.filter
@@ -241,21 +243,23 @@ module Monadic = struct
   (* base operations *)
 
   let bring (r : N.RoleName.t) (dst : name) : bool t =
-
-    let trx_exists (r: name) (src : name) (dst : name) : bool t =
+    let trx_exists (r : name) (src : name) (dst : name) : bool t =
       let* n = get_net in
       let is_silent trx =
-        try
-          List.assoc trx n.transitions = Silent
-        with
-          _ -> false
+        try List.assoc trx n.transitions = Silent with _ -> false
       in
       let trx_ex =
-        Option.bind (List.find_opt (fun (s, _, _, m) ->
-                         s = src && List.mem r m) n.arcs) (fun (_, trx, _, _) ->
+        Option.bind
+          (List.find_opt
+             (fun (s, _, _, m) -> s = src && List.mem r m)
+             n.arcs )
+          (fun (_, trx, _, _) ->
             if is_silent trx then
-              List.find_opt (fun (s, d, _, m) -> s = trx && d = dst && List.mem r m) n.arcs
-              else None) |> Option.is_some
+              List.find_opt
+                (fun (s, d, _, m) -> s = trx && d = dst && List.mem r m)
+                n.arcs
+            else None )
+        |> Option.is_some
       in
       return trx_ex
     in
@@ -265,11 +269,12 @@ module Monadic = struct
     match from with
     | None -> return false (* no bringing possible *)
     | Some src ->
-       let* trx_ex = trx_exists tk_r src dst in
-       if src = dst || trx_ex then return true
-       else
-         let* _ = create_silent_tr src dst tk_r in
-         return true
+        let* trx_ex = trx_exists tk_r src dst in
+        (* check if there is a single transtion that does this *)
+        if src = dst || trx_ex then return true
+        else
+          let* _ = create_silent_tr src dst tk_r in
+          return true
   (* brought the token *)
 
   (* translation *)
@@ -322,22 +327,21 @@ module Monadic = struct
           if not part_exists then add_tokens_to_place pl [tok] else return ()
         in
         let* _ = map (bring_or_create pl) parts in
-
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
         translate cont
-
     | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (x, _, _) ->
-       let* part_pls = lookup_delta x in
-       let* part_pls' = match part_pls with
-           | Some ppls -> return ppls
-           | None -> fail @@ "Variable: " ^ N.TypeVariableName.user x ^ " not found! (" ^ N.TypeVariableName.show x ^ ")"
-       in
-       let* _ = map (fun (p, pl) -> bring p pl) part_pls' in
-       return ()
-
-
+        let* part_pls = lookup_delta x in
+        let* part_pls' =
+          match part_pls with
+          | Some ppls -> return ppls
+          | None ->
+              fail @@ "Variable: " ^ N.TypeVariableName.user x
+              ^ " not found! (" ^ N.TypeVariableName.show x ^ ")"
+        in
+        let* _ = map (fun (p, pl) -> bring p pl) part_pls' in
+        return ()
     | G.ChoiceG (r, conts) ->
         let add_cont cont =
           let* gamma = get_gamma in
