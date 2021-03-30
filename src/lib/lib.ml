@@ -37,7 +37,7 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
 
 type fmt = Nuscr | Pedro | Dot | Sexp | Info
 
-let main (fmt_in : fmt) (fmt_out : fmt) fn =
+let convert (fmt_in : fmt) (fmt_out : fmt) fn =
   let inp : (string * Syntax.net) list =
     match fmt_in with
     | Pedro -> (

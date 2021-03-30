@@ -13,5 +13,5 @@ let () =
     let inp = Sys.argv.(1) |> fmt_of_string in
     let out = Sys.argv.(2) |> fmt_of_string in
     let fn = Sys.argv.(3) in
-    Pedrolib.Lib.main inp out fn
+    Pedrolib.Lib.convert inp out fn
   else "Invalid arguments" |> print_endline
