@@ -14,4 +14,6 @@ let () =
     let out = Sys.argv.(2) |> fmt_of_string in
     let fn = Sys.argv.(3) in
     Pedrolib.Lib.convert inp out fn
+  else if (Array.length Sys.argv = 2) && Sys.argv.(1) = "interact" then
+    Pedrolib.Lib.interact ()
   else "Invalid arguments" |> print_endline

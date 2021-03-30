@@ -35,7 +35,56 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
     | _ -> failwith "Violation: this cannot happen" )
   | _ -> failwith "Violation: this cannot happen"
 
+
 type fmt = Nuscr | Pedro | Dot | Sexp | Info
+
+type cmd = Empty | Exit | Pwd | Load | Extra
+
+let interact () =
+  let _prots = ref ["default", Syntax.empty_net] in
+  let rec loop () =
+    let parse_cmd cmd =
+      match String.split_on_char ' ' cmd with
+      | [] -> Ok (Empty, [])
+      | "bye"::_ -> Ok (Exit, [])
+      | "pwd"::_ -> Ok (Pwd, [])
+      | "load"::pars -> Ok (Load, pars)
+      | _ -> Error ("Wrong command: " ^ cmd)
+    in
+
+    let do_cmd = function
+      | Empty, _ -> Ok ("", false)
+      | Exit, _ -> Ok ("Bye!", true)
+      | Pwd, _ -> Ok (Sys.getcwd (), false)
+      | Load, [] ->  Error "Load command with wrong number of parameters"
+      | Load, pars ->
+         let _fn = String.concat " " pars in
+         Ok ("Not done.", false)
+      | _ -> Error "Something is not implemented"
+    in
+
+    let print_res = function
+      | Ok (str, _) -> print_endline str
+      | Error msg -> print_endline @@ "Error: " ^ msg
+    in
+    let finished = function
+        | Ok (_, res) -> res
+        | _ -> false
+    in
+
+    print_string "> " ;
+    let cmd_line = read_line () in
+    let res = Result.bind
+                (parse_cmd cmd_line)
+              (fun cmd ->
+                do_cmd cmd)
+    in
+    print_res res ;
+    if finished res then () else loop ()
+  in
+  print_endline "Welcome to Pedro (Vote for Pedro!)" ;
+  loop ()
+
 
 let convert (fmt_in : fmt) (fmt_out : fmt) fn =
   let inp : (string * Syntax.net) list =
