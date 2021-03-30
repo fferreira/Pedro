@@ -35,56 +35,143 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
     | _ -> failwith "Violation: this cannot happen" )
   | _ -> failwith "Violation: this cannot happen"
 
-
 type fmt = Nuscr | Pedro | Dot | Sexp | Info
 
-type cmd = Empty | Exit | Pwd | Load | Extra
+type cmd = Empty | Exit | Pwd | Load | List | Set | Trx | Print | Help
 
 let interact () =
-  let _prots = ref ["default", Syntax.empty_net] in
+  let prots = ref [("default", Syntax.empty_net)] in
+  let current : string ref  = ref "default" in
   let rec loop () =
     let parse_cmd cmd =
-      match String.split_on_char ' ' cmd with
-      | [] -> Ok (Empty, [])
-      | "bye"::_ -> Ok (Exit, [])
-      | "pwd"::_ -> Ok (Pwd, [])
-      | "load"::pars -> Ok (Load, pars)
+      let cmd' = String.trim cmd in
+      let split =
+        String.index_opt cmd' ' '
+        |> Option.value ~default:(String.length cmd')
+      in
+      let verb, pars =
+        ( String.sub cmd' 0 split |> String.trim
+        , String.sub cmd' split (String.length cmd' - split) |> String.trim
+        )
+      in
+      match verb with
+      | "" -> Ok (Empty, "")
+      | "bye" -> Ok (Exit, "")
+      | "pwd" -> Ok (Pwd, "")
+      | "load" -> Ok (Load, pars)
+      | "list" -> Ok (List, pars)
+      | "set" -> Ok (Set, pars)
+      | "trx" -> Ok (Trx, pars)
+      | "print" -> Ok (Print, pars)
+      | "help" -> Ok (Help, pars)
       | _ -> Error ("Wrong command: " ^ cmd)
     in
-
     let do_cmd = function
       | Empty, _ -> Ok ("", false)
       | Exit, _ -> Ok ("Bye!", true)
       | Pwd, _ -> Ok (Sys.getcwd (), false)
-      | Load, [] ->  Error "Load command with wrong number of parameters"
-      | Load, pars ->
-         let _fn = String.concat " " pars in
-         Ok ("Not done.", false)
-      | _ -> Error "Something is not implemented"
-    in
+      | Load, "" -> Error "Load command with wrong number of parameters"
+      | Load, fn ->
+          if Filename.extension fn = ".pdr" then
+            let exprs = parse fn (Stdlib.open_in fn) in
+            match Syntax.validate_net exprs with
+            | Ok net ->
+                prots := [("default", net)] ; current := "default" ;
+                Ok (fn ^ " loaded.", false)
+            | Error err -> Error err
+          else if
+            Filename.extension fn = ".nuscr"
+            || Filename.extension fn = ".scr"
+          then
+            try
+              let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+              let protocol_names =
+                List.map fst @@ Nuscrlib.Lib.enumerate scr
+              in
+              let gtypes =
+                let scr_to_net proto =
+                  match
+                    Nuscrlib.Lib.get_global_type scr ~protocol:proto
+                    |> Global.net_of_global_type
+                  with
+                  | Ok net -> net
+                  | Error err -> failwith err
+                in
+                List.map
+                  (fun proto ->
+                    (Global.N.ProtocolName.user proto, scr_to_net proto) )
+                  protocol_names
+              in
+              prots := gtypes ; current := List.hd gtypes |> fst ;
+              Ok (fn ^ " loaded.", false)
+            with Nuscrlib.Err.UserError ue ->
+              Error (Nuscrlib.Err.show_user_error ue)
+          else Error ("Unknown file extension: " ^ Filename.extension fn)
+      | List, _ ->
+         let pns = String.concat " " @@ List.map fst !prots in
+         Ok (pns, false)
+      | Set, prot when String.length prot = 0  ->
+         Ok (!current, false)
+      | Set, prot ->
+         if List.mem prot (List.map fst !prots) then
+           (current := prot ; Ok ("Ok.", false))
+         else
+           Error (prot ^ " not found.")
 
+      | Trx, pars when String.length pars = 0  ->
+         let net = List.assoc !current !prots in
+         Ok (Opsem.enabled_transitions_with_silent net |> String.concat " ", false)
+      | Trx, tn ->
+         let net = List.assoc !current !prots in
+         (match Opsem.do_transition_with_silent net tn with
+         | None -> Error (tn ^ " can't be taken.")
+         | Some net ->
+            prots :=
+              (!current, net):: List.remove_assoc !current !prots ;
+            Ok ("Ok.", false))
+      | Print, fmt ->
+         let net = List.assoc !current !prots in
+         let str = match fmt with
+           | "sexp" -> Syntax.sexp_of_net net |> Sexplib.Sexp.to_string
+           | "dot" -> Pn.generate_ppn net |> Pn.generate_dot
+           | "pedro"
+           | _ ->  net |> Syntax.expr_list_of_net |> Pretty.pp_expr_list
+         in
+         Ok (str, false)
+      | Help, _ ->
+         let msg =
+           "Enter: cmd pars\n"
+           ^ "load <name>.nuscr : load a scribble file.\n"
+           ^ "load <name>.scr : load a scribble file.\n"
+           ^ "load <name>.pdr : load a pedro file.\n"
+           ^ "list : list the currently loaded protocos.\n"
+           ^ "set : with no parameters prints the current protocol.\n"
+           ^ "set <name> : sets <name> as the current protocol.\n"
+           ^ "trx : with no parameters prints the enabled transitions.\n"
+           ^ "trx <name> : tries to execute <name> in the current protocl.\n"
+           ^ "print : prints the pedro syntax for the current state of the protocol.\n"
+           ^ "print pedro : prints the pedro syntax for the current state of the protocol.\n"
+           ^ "print sexp : prints the s-expression for the current state of the protocol.\n"
+           ^ "print dot : prints the graphviz representation for the current state of the protocol.\n"
+           ^ "help : prints this message.\n"
+           ^ "pwd : prints working directory.\n"
+           ^ "bye : quits.\n"
+         in
+         Ok (msg, false)
+    in
     let print_res = function
       | Ok (str, _) -> print_endline str
       | Error msg -> print_endline @@ "Error: " ^ msg
     in
-    let finished = function
-        | Ok (_, res) -> res
-        | _ -> false
-    in
-
+    let finished = function Ok (_, res) -> res | _ -> false in
     print_string "> " ;
     let cmd_line = read_line () in
-    let res = Result.bind
-                (parse_cmd cmd_line)
-              (fun cmd ->
-                do_cmd cmd)
-    in
+    let res = Result.bind (parse_cmd cmd_line) (fun cmd -> do_cmd cmd) in
     print_res res ;
     if finished res then () else loop ()
   in
   print_endline "Welcome to Pedro (Vote for Pedro!)" ;
   loop ()
-
 
 let convert (fmt_in : fmt) (fmt_out : fmt) fn =
   let inp : (string * Syntax.net) list =
