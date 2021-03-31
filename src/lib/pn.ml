@@ -80,9 +80,8 @@ module Display = struct
   let default_vertex_attributes _ = []
 
   let vertex_attributes = function
-    | Place (_, []) -> [`Shape `Circle; `Label ("")]
-    | Place (_, tks) ->
-        [`Shape `Circle; `Label (String.concat " " tks)]
+    | Place (_, []) -> [`Shape `Circle; `Label ""]
+    | Place (_, tks) -> [`Shape `Circle; `Label (String.concat " " tks)]
     (* | Place (nm, []) -> [`Shape `Circle; `Label ("{" ^ nm ^ "}")]
      * | Place (nm, tks) ->
      *     [`Shape `Circle; `Label ("{" ^ nm ^ "}" ^ String.concat " " tks)] *)

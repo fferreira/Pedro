@@ -189,7 +189,9 @@ let convert (fmt_in : fmt) (fmt_out : fmt) fn =
     | Nuscr -> (
       try
         let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
-        let protocol_names = List.map fst @@ Nuscrlib.Lib.enumerate scr |> Util.uniq in
+        let protocol_names =
+          List.map fst @@ Nuscrlib.Lib.enumerate scr |> Util.uniq
+        in
         let gtypes =
           let scr_to_net proto =
             match
