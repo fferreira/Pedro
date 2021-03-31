@@ -37,7 +37,7 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
 
 type fmt = Nuscr | Pedro | Dot | Sexp | Info
 
-type cmd = Empty | Exit | Pwd | Load | List | Set | Trx | Print | Help
+type cmd = Empty | Exit | Pwd | Load | List | Set | Trx | Print | Done | Help
 
 let interact () =
   let prots = ref [("default", Syntax.empty_net)] in
@@ -63,6 +63,7 @@ let interact () =
       | "set" -> Ok (Set, pars)
       | "trx" -> Ok (Trx, pars)
       | "print" -> Ok (Print, pars)
+      | "done" -> Ok (Done, pars)
       | "help" -> Ok (Help, pars)
       | _ -> Error ("Wrong command: " ^ cmd)
     in
@@ -140,6 +141,14 @@ let interact () =
                 net |> Syntax.expr_list_of_net |> Pretty.pp_expr_list
           in
           Ok (str, false)
+      | Done, _ ->
+          let net = List.assoc !current !prots in
+         let final_set = Opsem.get_markings_by_tag "final" net in
+         if List.exists (Opsem.net_matches_marking net) final_set then
+           Ok ("Ok.", false)
+         else
+           Error "Net is not done"
+
       | Help, _ ->
           let msg =
             "Enter: cmd pars\n"
@@ -159,6 +168,7 @@ let interact () =
                of the protocol.\n"
             ^ "print dot : prints the graphviz representation for the \
                current state of the protocol.\n"
+            ^ "done : prints Ok when the protocol has finished.\n"
             ^ "help : prints this message.\n"
             ^ "pwd : prints working directory.\n" ^ "bye : quits.\n"
           in
