@@ -37,7 +37,18 @@ let validate_exprs_to_net_to_exprs_to_net exprs =
 
 type fmt = Nuscr | Pedro | Dot | Sexp | Info
 
-type cmd = Empty | Exit | Pwd | Load | List | Set | Trx | Print | Done | Help
+type cmd =
+  | Empty
+  | Exit
+  | Pwd
+  | Load
+  | List
+  | Set
+  | Trx
+  | Print
+  | Done
+  | Proj
+  | Help
 
 let interact () =
   let prots = ref [("default", Syntax.empty_net)] in
@@ -64,6 +75,7 @@ let interact () =
       | "trx" -> Ok (Trx, pars)
       | "print" -> Ok (Print, pars)
       | "done" -> Ok (Done, pars)
+      | "project" -> Ok (Proj, pars)
       | "help" -> Ok (Help, pars)
       | _ -> Error ("Wrong command: " ^ cmd)
     in
@@ -143,12 +155,14 @@ let interact () =
           Ok (str, false)
       | Done, _ ->
           let net = List.assoc !current !prots in
-         let final_set = Opsem.get_markings_by_tag "final" net in
-         if List.exists (Opsem.net_matches_marking net) final_set then
-           Ok ("Ok.", false)
-         else
-           Error "Net is not done"
-
+          let final_set = Opsem.get_markings_by_tag "final" net in
+          if List.exists (Opsem.net_matches_marking net) final_set then
+            Ok ("Ok.", false)
+          else Error "Net is not done"
+      | Proj, tok ->
+          let net = Proj.project (List.assoc !current !prots) tok in
+          prots := (!current, net) :: List.remove_assoc !current !prots ;
+          Ok ("Ok.", false)
       | Help, _ ->
           let msg =
             "Enter: cmd pars\n"
@@ -169,7 +183,8 @@ let interact () =
             ^ "print dot : prints the graphviz representation for the \
                current state of the protocol.\n"
             ^ "done : prints Ok when the protocol has finished.\n"
-            ^ "help : prints this message.\n"
+            ^ "project <role> : projects the net to the information that \
+               role sees.\n" ^ "help : prints this message.\n"
             ^ "pwd : prints working directory.\n" ^ "bye : quits.\n"
           in
           Ok (msg, false)

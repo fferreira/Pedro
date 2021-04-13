@@ -24,9 +24,9 @@ type net =
   ; places: (name * entity_marking) list
   ; transitions: (name * vis) list
   ; arcs: (name * name * dir * entity_marking) list
-    (* markings are an association list of name, tags and places with markings *)
-  ; markings: (string * (name option * (name * entity_marking) list)) list
-  }
+        (* markings are an association list of name, tags and places with
+           markings *)
+  ; markings: (string * (name option * (name * entity_marking) list)) list }
 
 let empty_net =
   {tokens= []; places= []; transitions= []; arcs= []; markings= []}
