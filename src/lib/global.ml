@@ -242,6 +242,7 @@ module Monadic = struct
 
   (* base operations *)
 
+  (* brings r to dst and return bool if it could be done *)
   let bring (r : N.RoleName.t) (dst : name) : bool t =
     let trx_exists (r : name) (src : name) (dst : name) : bool t =
       let* n = get_net in
@@ -348,8 +349,11 @@ module Monadic = struct
           let* pl = gen_sym in
           let* _ = add_place pl [] in
           let* cond = bring r pl in
-          assert cond ;
-          (* always true or violation *)
+          let* _ =
+            let* tok_r = tkr r in
+            if not cond then add_tokens_to_place pl [tok_r]
+            else return ()
+          in
           let* _ = update_gamma r pl in
           let* _ = translate cont in
           set_gamma gamma
