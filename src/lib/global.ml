@@ -104,6 +104,7 @@ module Translation = struct
       st.gamma
     |> return
 
+
   let update_gamma (r : N.RoleName.t) (nm : name) : unit t =
     let* st = get in
     let gamma' =
@@ -232,8 +233,7 @@ module Translation = struct
 
   (* takes a list of roles, and generates an 'n' split for them to implement
      par. It returns the split point and all the resulting branches. *)
-  let create_par (rns : name list) (n : int) : (name * name list) t =
-    let* p = gen_sym in
+  let create_par (p : name) (rns : name list) (n : int) : name list t =
     let* ps = gen_sym_n n in
     let for_each_part (rn : name) : unit t =
       let* trn = gen_sym in
@@ -250,11 +250,11 @@ module Translation = struct
     in
     let* n = get_net in
     let net =
-      {n with places= (p, []) :: List.map (fun p' -> (p', [])) ps @ n.places}
+      {n with places= List.map (fun p' -> (p', [])) ps @ n.places}
     in
     let* _ = set_net net in
     let* _ = map for_each_part rns in
-    return (p, ps)
+    return ps
 
   (* token from role, it adds it if it is new *)
   let tkr (r : N.RoleName.t) : name t =
@@ -277,6 +277,21 @@ module Translation = struct
       let net = {n with tokens= nm :: n.tokens} in
       let* _ = set {st with net} in
       return nm
+
+  (* looks up a place or creates a new place and it puts it *)
+  let lookup_gamma_or_create r =
+    let* r_from = tkr r in
+    let* p1_opt = lookup_gamma r in
+    let* p1 =
+      match p1_opt with
+      | None ->
+         let* p1 = gen_sym in
+         let* _ = add_place p1 [r_from] in
+         let* _ = update_gamma r p1 in
+         return p1
+      | Some p1 -> return p1
+    in
+    return p1
 end
 
 module Monadic = struct
@@ -337,15 +352,7 @@ module Monadic = struct
         (* translate destination, as token *)
         let* label = tkm m in
         (* translate label *)
-        let* p1_opt = lookup_gamma src in
-        let* p1 =
-          match p1_opt with
-          | None ->
-              let* p1 = gen_sym in
-              let* _ = add_place p1 [r_from] in
-              return p1
-          | Some p1 -> return p1
-        in
+        let* p1 = lookup_gamma_or_create src in
         let msg =
           { p1
           ; label
@@ -364,8 +371,14 @@ module Monadic = struct
         fail "Unsupported: MuG cannot have refinements."
     | G.MuG (x, _, cont) ->
         let parts = participants cont in
-        let* pl = gen_sym in
-        let* _ = add_place pl [] in
+
+        let* pl = match parts with
+          | [] ->
+             let* pl = gen_sym in
+             let* _ = add_place pl [] in
+             return pl
+          | p::_ -> lookup_gamma_or_create p
+        in
         let* _ = map (fun p -> bring_or_create p pl) parts in
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
         translate cont
@@ -393,15 +406,7 @@ module Monadic = struct
           (* We could use a reader monad to avoid this, but this is simpler
              for now *)
         in
-        let* plo = lookup_gamma r in
-        let* _ =
-          match plo with
-          | Some _ -> return ()
-          | None ->
-              let* pl = gen_sym in
-              let* tok = tkr r in
-              add_place pl [tok]
-        in
+        let* _ = lookup_gamma_or_create r in
         let* _ = map add_cont conts in
         return ()
     | EndG ->
@@ -428,8 +433,9 @@ module Monadic = struct
         let rs = Util.uniq_eq N.RoleName.(=) @@ List.concat_map participants conts in
         let* rnms = map tkr rs in
         let n = List.length conts in
+        let* p = lookup_gamma_or_create (List.hd rs) in
         (* create the net to split *)
-        let* p, ps = create_par rnms n in
+        let* ps = create_par p rnms n in
         (* bring the participants *)
         let* _ = map (fun r -> bring_or_create r p) rs in
         let for_each_cont (p', c) =
