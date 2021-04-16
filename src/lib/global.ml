@@ -21,6 +21,9 @@ let rec participants (n : G.t) : N.RoleName.t list =
   | G.EndG -> []
   | G.CallG (src, _, roles, cont) ->
       uc src (Util.uniq @@ roles @ participants cont)
+  | G.ParG conts ->
+     (* TODO potential perforamnce problem *)
+     Util.uniq @@ List.concat_map participants conts
 
 (* monadic state *)
 type state =
@@ -391,6 +394,7 @@ module Monadic = struct
         fail
           "Unsopported: cannot call sub protocols. (In the future we could \
            inline them)"
+    | G.ParG _ -> assert false
 end
 
 let net_of_global_type n =
