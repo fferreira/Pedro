@@ -425,7 +425,7 @@ module Monadic = struct
           "Unsopported: cannot call sub protocols. (In the future we could \
            inline them)"
     | G.ParG conts ->
-        let rs = Util.uniq @@ List.concat_map participants conts in
+        let rs = Util.uniq_eq N.RoleName.(=) @@ List.concat_map participants conts in
         let* rnms = map tkr rs in
         let n = List.length conts in
         (* create the net to split *)
