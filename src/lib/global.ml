@@ -22,8 +22,8 @@ let rec participants (n : G.t) : N.RoleName.t list =
   | G.CallG (src, _, roles, cont) ->
       uc src (Util.uniq @@ roles @ participants cont)
   | G.ParG conts ->
-     (* TODO potential perforamnce problem *)
-     Util.uniq @@ List.concat_map participants conts
+      (* TODO potential perforamnce problem *)
+      Util.uniq @@ List.concat_map participants conts
 
 (* monadic state *)
 type state =
@@ -87,6 +87,15 @@ module Translation = struct
     let* _ = set {st with gen_sym_st= st.gen_sym_st + 1} in
     "_" ^ string_of_int st.gen_sym_st |> return
 
+  (* generates 'n' fresh names *)
+  let rec gen_sym_n (n : int) : name list t =
+    match n with
+    | 0 -> return []
+    | n ->
+        let* nm = gen_sym in
+        let* nms = gen_sym_n (n - 1) in
+        return @@ nm :: nms
+
   (* looks up a role in gamma *)
   let lookup_gamma (r : N.RoleName.t) : name option t =
     let* st = get in
@@ -103,6 +112,10 @@ module Translation = struct
         st.gamma
     in
     set {st with gamma= (r, nm) :: gamma'}
+
+  let update_gamma_n (rs : N.RoleName.t list) (pl : name) : unit t =
+    let* _ = map (fun r -> update_gamma r pl) rs in
+    return ()
 
   let lookup_delta (r : N.TypeVariableName.t) :
       (N.RoleName.t * name) list option t =
@@ -191,7 +204,7 @@ module Translation = struct
 
   (* creates a new message in the net and returns the buffer place, and the
      final place *)
-  let create_messge (msg : message) : (name * name) t =
+  let create_message (msg : message) : (name * name) t =
     let* _ = assert_place msg.p1 in
     let* _ = assert_not_transition msg.tr_send in
     let* _ = assert_not_transition msg.tr_recv in
@@ -216,6 +229,32 @@ module Translation = struct
     in
     let* _ = set_net net in
     return (p2, p3)
+
+  (* takes a list of roles, and generates an 'n' split for them to implement
+     par. It returns the split point and all the resulting branches. *)
+  let create_par (rns : name list) (n : int) : (name * name list) t =
+    let* p = gen_sym in
+    let* ps = gen_sym_n n in
+    let for_each_part (rn : name) : unit t =
+      let* trn = gen_sym in
+      let trs_split =
+        List.map (fun p -> (trn, p, TransitionToPlace, [rn])) ps
+      in
+      let* n = get_net in
+      let net =
+        { n with
+          transitions= (trn, Silent) :: n.transitions
+        ; arcs= (p, trn, PlaceToTransition, [rn]) :: trs_split @ n.arcs }
+      in
+      set_net net
+    in
+    let* n = get_net in
+    let net =
+      {n with places= (p, []) :: List.map (fun p' -> (p', [])) ps @ n.places}
+    in
+    let* _ = set_net net in
+    let* _ = map for_each_part rns in
+    return (p, ps)
 
   (* token from role, it adds it if it is new *)
   let tkr (r : N.RoleName.t) : name t =
@@ -281,6 +320,13 @@ module Monadic = struct
           return true
   (* brought the token *)
 
+  (* bring a participant to a place (or add it if it's new) and update gamma *)
+  let bring_or_create (part : N.RoleName.t) (pl : name) : unit t =
+    let* part_exists = bring part pl in
+    let* _ = update_gamma part pl in
+    let* tok = tkr part in
+    if not part_exists then add_tokens_to_place pl [tok] else return ()
+
   (* translation *)
 
   let rec translate : G.t -> unit t = function
@@ -308,14 +354,11 @@ module Monadic = struct
           ; tr_send= transition_name r_from r_to PlaceToTransition label
           ; tr_recv= transition_name r_from r_to TransitionToPlace label }
         in
-        let* p2, p3 = create_messge msg in
-        let* r_to_exists = bring dst p2 in
-        let* _ =
-          if not r_to_exists then add_tokens_to_place p2 [r_to]
-          else return ()
-        in
+        let* p2, p3 = create_message msg in
+        let* _ = bring_or_create dst p2 in
         let* _ = update_gamma src p2 in
         let* _ = update_gamma dst p3 in
+        (* after this, dst has to move to p3 *)
         translate cont
     | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
         fail "Unsupported: MuG cannot have refinements."
@@ -323,14 +366,7 @@ module Monadic = struct
         let parts = participants cont in
         let* pl = gen_sym in
         let* _ = add_place pl [] in
-        (* if a participant is new, do we add it to this place? and in gamma? *)
-        let bring_or_create pl part =
-          let* part_exists = bring part pl in
-          let* _ = update_gamma part pl in
-          let* tok = tkr part in
-          if not part_exists then add_tokens_to_place pl [tok] else return ()
-        in
-        let* _ = map (bring_or_create pl) parts in
+        let* _ = map (fun p -> bring_or_create p pl) parts in
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
         translate cont
     | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
@@ -351,13 +387,7 @@ module Monadic = struct
           let* gamma = get_gamma in
           let* pl = gen_sym in
           let* _ = add_place pl [] in
-          let* cond = bring r pl in
-          let* _ =
-            let* tok_r = tkr r in
-            if not cond then add_tokens_to_place pl [tok_r]
-            else return ()
-          in
-          let* _ = update_gamma r pl in
+          let* _ = bring_or_create r pl in
           let* _ = translate cont in
           set_gamma gamma
           (* We could use a reader monad to avoid this, but this is simpler
@@ -394,7 +424,20 @@ module Monadic = struct
         fail
           "Unsopported: cannot call sub protocols. (In the future we could \
            inline them)"
-    | G.ParG _ -> assert false
+    | G.ParG conts ->
+        let rs = Util.uniq @@ List.concat_map participants conts in
+        let* rnms = map tkr rs in
+        let n = List.length conts in
+        (* create the net to split *)
+        let* p, ps = create_par rnms n in
+        (* bring the participants *)
+        let* _ = map (fun r -> bring_or_create r p) rs in
+        let for_each_cont (p', c) =
+          let* _ = update_gamma_n rs p' in
+          translate c
+        in
+        let* _ = map for_each_cont @@ List.combine ps conts in
+        return ()
 end
 
 let net_of_global_type n =
