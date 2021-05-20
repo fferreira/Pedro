@@ -59,14 +59,6 @@ module WellFormed = struct
 
   (* phi operations *)
 
-  (* let get_phi =
-   *   let* st = get in
-   *   return st.phi
-   *
-   * let set_phi phi' =
-   *   let* st = get in
-   *   set {st with phi = phi'} *)
-
   let to_be_informed r rs =
     let* st = get in
     set {st with phi = (r, List.filter (fun r' -> N.RoleName.equal r r' |> not) rs)::st.phi}
