@@ -105,8 +105,9 @@ let interact () =
               let gtypes =
                 let scr_to_net proto =
                   match
-                    Nuscrlib.Lib.get_global_type scr ~protocol:proto
-                    |> Global.net_of_global_type
+                    Result.bind
+                      (Nuscrlib.Lib.get_global_type scr ~protocol:proto |> Wf.wf)
+                      Global.net_of_global_type
                   with
                   | Ok net -> net
                   | Error err -> failwith err
@@ -220,8 +221,9 @@ let convert (fmt_in : fmt) (fmt_out : fmt) fn =
         let gtypes =
           let scr_to_net proto =
             match
-              Nuscrlib.Lib.get_global_type scr ~protocol:proto
-              |> Global.net_of_global_type
+              Result.bind
+                (Nuscrlib.Lib.get_global_type scr ~protocol:proto |> Wf.wf)
+                Global.net_of_global_type
             with
             | Ok net -> net
             | Error err -> failwith err

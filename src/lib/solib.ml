@@ -9,7 +9,7 @@ let import_nuscr_file (fn : string) (proto_name : string) : string option =
     let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
     let proto = Nuscrlib.Names.ProtocolName.of_string proto_name in
     let gtype = Nuscrlib.Lib.get_global_type scr ~protocol:proto in
-    match Global.net_of_global_type gtype with
+    match Result.bind (Wf.wf gtype) Global.net_of_global_type with
     | Ok pn' ->
         pn := pn' ;
         None

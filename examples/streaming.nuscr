@@ -1,7 +1,7 @@
 protocol Streamming(role A, role B) {
   rec X {
   choice at A {
-    DATA from A to B ; continue X ;
+    DATA from A to B ; (*) continue X ;
   } or {
     DONE from A to B ;
   } or {
