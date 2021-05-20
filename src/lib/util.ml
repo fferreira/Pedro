@@ -4,9 +4,8 @@ let rec uniq = function
   | x :: xs -> if List.mem x xs then uniq xs else x :: uniq xs
   | [] -> []
 
-
 let rec uniq_eq (eq : 'a -> 'a -> bool) =
-  let mem_eq x = List.exists (fun p -> eq x p ) in
+  let mem_eq x = List.exists (fun p -> eq x p) in
   function
   | x :: xs -> if mem_eq x xs then uniq_eq eq xs else x :: uniq_eq eq xs
   | [] -> []

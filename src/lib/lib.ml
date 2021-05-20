@@ -106,7 +106,8 @@ let interact () =
                 let scr_to_net proto =
                   match
                     Result.bind
-                      (Nuscrlib.Lib.get_global_type scr ~protocol:proto |> Wf.wf)
+                      ( Nuscrlib.Lib.get_global_type scr ~protocol:proto
+                      |> Wf.wf )
                       Global.net_of_global_type
                   with
                   | Ok net -> net

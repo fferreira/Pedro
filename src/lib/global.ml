@@ -104,7 +104,6 @@ module Translation = struct
       st.gamma
     |> return
 
-
   let update_gamma (r : N.RoleName.t) (nm : name) : unit t =
     let* st = get in
     let gamma' =
@@ -249,9 +248,7 @@ module Translation = struct
       set_net net
     in
     let* n = get_net in
-    let net =
-      {n with places= List.map (fun p' -> (p', [])) ps @ n.places}
-    in
+    let net = {n with places= List.map (fun p' -> (p', [])) ps @ n.places} in
     let* _ = set_net net in
     let* _ = map for_each_part rns in
     return ps
@@ -285,10 +282,10 @@ module Translation = struct
     let* p1 =
       match p1_opt with
       | None ->
-         let* p1 = gen_sym in
-         let* _ = add_place p1 [r_from] in
-         let* _ = update_gamma r p1 in
-         return p1
+          let* p1 = gen_sym in
+          let* _ = add_place p1 [r_from] in
+          let* _ = update_gamma r p1 in
+          return p1
       | Some p1 -> return p1
     in
     return p1
@@ -371,13 +368,13 @@ module Monadic = struct
         fail "Unsupported: MuG cannot have refinements."
     | G.MuG (x, _, cont) ->
         let parts = participants cont in
-
-        let* pl = match parts with
+        let* pl =
+          match parts with
           | [] ->
-             let* pl = gen_sym in
-             let* _ = add_place pl [] in
-             return pl
-          | p::_ -> lookup_gamma_or_create p
+              let* pl = gen_sym in
+              let* _ = add_place pl [] in
+              return pl
+          | p :: _ -> lookup_gamma_or_create p
         in
         let* _ = map (fun p -> bring_or_create p pl) parts in
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
@@ -430,7 +427,9 @@ module Monadic = struct
           "Unsopported: cannot call sub protocols. (In the future we could \
            inline them)"
     | G.ParG conts ->
-        let rs = Util.uniq_eq N.RoleName.(=) @@ List.concat_map participants conts in
+        let rs =
+          Util.uniq_eq N.RoleName.( = ) @@ List.concat_map participants conts
+        in
         let* rnms = map tkr rs in
         let n = List.length conts in
         let* p = lookup_gamma_or_create (List.hd rs) in
