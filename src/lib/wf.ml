@@ -30,7 +30,7 @@ module WellFormed = struct
     if List.exists (fun y -> N.TypeVariableName.equal x y) st.epsilon then
       return ()
     else
-      fail "Ungarded variable found."
+      fail @@ N.TypeVariableName.show x ^ " is ungarded."
 
   (* delta/epsilon operations *)
 
@@ -55,7 +55,7 @@ module WellFormed = struct
     if List.exists (fun y -> N.RoleName.equal r y) st.psi then
       return ()
     else
-      fail "Role was not enabled."
+      fail @@ "Role:" ^ N.RoleName.show r  ^ "was not enabled."
 
   (* phi operations *)
 
@@ -75,16 +75,25 @@ module WellFormed = struct
   (* phi is well informed: meaning there are no roles that still need to be informed *)
   let wi =
     let* st = get in
+    let error_string () =
+      let phi = st.phi in
+      String.concat "\n" @@
+        List.map
+          (fun (r, rs) ->
+            "Choice by role: " ^ N.RoleName.show r
+            ^ " does not know of: " ^ String.concat ", " @@ List.map N.RoleName.user rs)
+          phi
+    in
     if List.for_all (fun (_, rs) -> Util.is_empty rs) st.phi then
       return ()
     else
-      fail "Phi is not well informed."
+      fail @@ "Phi is not well informed.\n" ^ error_string ()
 
   (* label operations *)
   let validate_and_add l =
     let* st = get in
     match List.find_opt (N.LabelName.equal l) st.labels with
-    | Some _ -> fail "Duplicated label name"
+    | Some _ -> fail @@ "Duplicated label name:" ^ N.LabelName.show l
     | None -> set {st with labels = l::st.labels}
 end
 
@@ -107,8 +116,10 @@ module Monadic = struct
        let* _ = inform dst in
        wf cont
 
-    | G.MessageG (_, _src, _dst, _) ->
-       fail "No role is enabled"
+    | G.MessageG (msg, src, dst, _) ->
+       fail @@ "Neither the sender (" ^ N.RoleName.show src
+               ^ "), nor the receiver (" ^ N.RoleName.show dst
+               ^ ") are enabled for label:" ^ N.LabelName.show msg.label
 
     | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
        fail "Error: Unsupported refined protocol"
