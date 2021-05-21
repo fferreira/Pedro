@@ -78,7 +78,7 @@ module WellFormed = struct
       String.concat "\n"
       @@ List.map
            (fun (r, rs) ->
-             "Choice by role: " ^ N.RoleName.show r ^ " does not know of: "
+             "Choice by role: " ^ N.RoleName.show r ^ " is not informed to: "
              ^ String.concat ", "
              @@ List.map N.RoleName.user rs )
            phi
