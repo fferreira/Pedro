@@ -187,6 +187,21 @@ module Translation = struct
     let markings = (nm, (tag, m)) :: List.remove_assoc nm n.markings in
     set_net {n with markings}
 
+  (* updates delta with information about potential new participants *)
+  let recursion_update (r : N.RoleName.t) (p : name) : unit t =
+    let add_to_gamma_if_not_there  (r : N.RoleName.t) gamma =
+      if List.exists (fun (r', _) -> N.RoleName.equal r r')  gamma
+      then gamma
+      else (r, p) :: gamma
+    in
+    let* st = get in
+    let* delta =
+      map
+        (fun (x, gamma) -> return (x, add_to_gamma_if_not_there r gamma))
+        st.delta
+    in
+    set {st with delta}
+
   (* create a silent transition between two places *)
   let create_silent_tr src dst tkn =
     let* _ = assert_place src in
@@ -359,6 +374,8 @@ module Monadic = struct
           ; tr_recv= transition_name r_from r_to TransitionToPlace label }
         in
         let* p2, p3 = create_message msg in
+        let* _ = recursion_update src p1 in
+        let* _ = recursion_update dst p2 in
         let* _ = bring_or_create dst p2 in
         let* _ = update_gamma src p2 in
         let* _ = update_gamma dst p3 in
@@ -366,7 +383,7 @@ module Monadic = struct
         translate cont
     | G.MuG (_, vars, _) when not (Util.is_empty vars) ->
         fail "Unsupported: MuG cannot have refinements."
-    | G.MuG (x, _, cont) ->
+    | G.MuG (x, _, cont) when 1 = 0 ->
         let parts = participants cont in
         let* pl =
           match parts with
@@ -379,6 +396,11 @@ module Monadic = struct
         let* _ = map (fun p -> bring_or_create p pl) parts in
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
         translate cont
+    | G.MuG (x, _, cont) ->
+       let* gamma = get_gamma in
+       let* _ = update_delta x gamma in
+       translate cont
+
     | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (x, _, _) ->
@@ -403,7 +425,8 @@ module Monadic = struct
           (* We could use a reader monad to avoid this, but this is simpler
              for now *)
         in
-        let* _ = lookup_gamma_or_create r in
+        let* pl = lookup_gamma_or_create r in
+        let* _ = recursion_update r pl in
         let* _ = map add_cont conts in
         return ()
     | EndG ->
