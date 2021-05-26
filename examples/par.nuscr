@@ -16,12 +16,12 @@ protocol WebStore (role WS, role BANK, role WH) {
         release_balance from WS to BANK ; continue X ;
       }
     } or {
-      not_enough_balance from BANK to WS ; continue protocol ;
+      not_enough_balance from BANK to WS ; continue X ;
     }
   }
 }
 
- WebLog (role WS, role LOG) {
+protocol WebLog (role WS, role LOG) {
   rec X {
     choice at WS {
       heartbeat from WS to LOG ; continue X ;
