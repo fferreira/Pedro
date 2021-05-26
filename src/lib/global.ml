@@ -417,11 +417,13 @@ module Monadic = struct
     | G.ChoiceG (r, conts) ->
         let add_cont cont =
           let* gamma = get_gamma in
+          let* delta = get_delta in
           let* pl = gen_sym in
           let* _ = add_place pl [] in
           let* _ = bring_or_create r pl in
           let* _ = translate cont in
-          set_gamma gamma
+          let* _ = set_gamma gamma in
+          set_delta delta
           (* We could use a reader monad to avoid this, but this is simpler
              for now *)
         in
