@@ -1,0 +1,110 @@
+(*# ConvertToGlobalTypesOnly, ParTypes #*)
+
+
+protocol WebStore (role WS, role BANK, role WH) {
+  rec X {
+    commit_balance from WS to BANK ;
+    choice at BANK {
+      balance_committed from BANK to WS ;
+      commit_stock from WS to WH ;
+      choice at WH {
+        stock_committed from WH to WS ;
+        consume_balance from WS to BANK ;
+        ship_stock from WS to WH ; continue X ;
+      } or {
+        not_in_stock from WH to WS ;
+        release_balance from WS to BANK ; continue X ;
+      }
+    } or {
+      not_enough_balance from BANK to WS ; continue protocol ;
+    }
+  }
+}
+
+ WebLog (role WS, role LOG) {
+  rec X {
+    choice at WS {
+      heartbeat from WS to LOG ; continue X ;
+    } or {
+      ws_error from WS to LOG ; continue X ;
+    }
+  }
+}
+
+protocol Dashboard (role WH, role DASHBOARD, role LOG) {
+  rec X {
+    sales_for_today from DASHBOARD to WH ;
+    choice at WH {
+      sales_report from WH to DASHBOARD ; continue X;
+    } or {
+      database_flooded from WH to LOG ;
+      warehouse_flooded from LOG to DASHBOARD ;
+      continue X ;
+    }
+  }
+}
+
+protocol Everything (role WS, role BANK, role WH, role DASHBOARD, role LOG) {
+  par {
+    rec X { // WebStore protocol
+      commit_balance from WS to BANK ;
+      choice at BANK {
+        balance_committed from BANK to WS ;
+        commit_stock from WS to WH ;
+        choice at WH {
+          stock_committed from WH to WS ;
+          consume_balance from WS to BANK ;
+          ship_stock from WS to WH ; continue X ;
+        } or {
+          not_in_stock from WH to WS ;
+          release_balance from WS to BANK ; continue X ;
+        }
+      } or {
+        not_enough_balance from BANK to WS ; continue X ;
+      }
+    }
+
+  } and {
+    rec X {
+      choice at WS {
+        heartbeat from WS to LOG ; continue X ;
+      } or {
+        ws_error from WS to LOG ; continue X ;
+      }
+    }
+  } and {
+    rec X { // Dashboard
+      sales_for_today from DASHBOARD to WH ;
+      choice at WH {
+        sales_report from WH to DASHBOARD ; continue X;
+      } or {
+        database_flooded from WH to LOG ;
+        warehouse_flooded from LOG to DASHBOARD ;
+        continue X ;
+      }
+    }
+  }
+}
+
+/*
+
+
+protocol Everything (role WS, role BANK, role WH, role DASHBOARD, role LOG) {
+  par {
+    rec X { // WebStore protocol
+      ...
+    }
+
+  } and { //WebLog protocol
+    rec X {
+      ...
+    }
+  } and {
+    rec X { // Dashboard
+      ...
+    }
+  }
+}
+
+
+*/
