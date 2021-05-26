@@ -48,11 +48,17 @@ type cmd =
   | Print
   | Done
   | Proj
+  | Clear
   | Help
 
 let interact () =
   let prots = ref [("default", Syntax.empty_net)] in
   let current : string ref = ref "default" in
+
+  let clear () =
+    prots := [("default", Syntax.empty_net)] ;
+    current := "default"
+  in
   let rec loop () =
     let parse_cmd cmd =
       let cmd' = String.trim cmd in
@@ -76,6 +82,7 @@ let interact () =
       | "print" -> Ok (Print, pars)
       | "done" -> Ok (Done, pars)
       | "project" -> Ok (Proj, pars)
+      | "clear" -> Ok (Clear, "")
       | "help" -> Ok (Help, pars)
       | _ -> Error ("Wrong command: " ^ cmd)
     in
@@ -83,6 +90,7 @@ let interact () =
       | Empty, _ -> Ok ("", false)
       | Exit, _ -> Ok ("Bye!", true)
       | Pwd, _ -> Ok (Sys.getcwd (), false)
+      | Clear, _ -> clear() ; Ok ("Cleared state", false)
       | Load, "" -> Error "Load command with wrong number of parameters"
       | Load, fn ->
           if Filename.extension fn = ".pdr" then
@@ -187,6 +195,7 @@ let interact () =
             ^ "done : prints Ok when the protocol has finished.\n"
             ^ "project <role> : projects the net to the information that \
                role sees.\n" ^ "help : prints this message.\n"
+            ^ "clear : clears the state and sets the default.\n"
             ^ "pwd : prints working directory.\n" ^ "bye : quits.\n"
           in
           Ok (msg, false)
