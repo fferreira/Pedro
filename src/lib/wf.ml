@@ -74,13 +74,16 @@ module WellFormed = struct
   let wi =
     let* st = get in
     let error_string () =
+      let role_with_pos (r : N.RoleName.t) =
+        N.RoleName.user r ^ "(" ^ (N.RoleName.where r |> Nuscrlib.Loc.show_source_loc) ^ ")"
+      in
       let phi = st.phi in
       String.concat "\n"
       @@ List.map
-           (fun (r, rs) ->
-             "Choice by role: " ^ N.RoleName.show r ^ " is not informed to: "
+           (fun (r, rs) -> if not @@ Util.is_empty rs then (
+             "Choice by role: " ^ role_with_pos r ^ " is not informed to: "
              ^ String.concat ", "
-             @@ List.map N.RoleName.user rs )
+             @@ List.map N.RoleName.user rs) else "")
            phi
     in
     if List.for_all (fun (_, rs) -> Util.is_empty rs) st.phi then return ()
