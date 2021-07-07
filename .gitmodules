@@ -1,0 +1,4 @@
+[submodule "vendor/nuscr"]
+	path = vendor/nuscr
+	url = git://github.com/nuscr/nuscr.git
+	branch = develop

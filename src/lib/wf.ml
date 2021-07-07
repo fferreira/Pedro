@@ -1,5 +1,5 @@
 module G = Nuscrlib.Gtype
-module N = Nuscrlib.Names
+module N = Names
 
 type state =
   { delta: N.TypeVariableName.t list (* ungarded recursion variables *)
@@ -75,7 +75,7 @@ module WellFormed = struct
     let* st = get in
     let error_string () =
       let role_with_pos (r : N.RoleName.t) =
-        N.RoleName.user r ^ "(" ^ (N.RoleName.where r |> Nuscrlib.Loc.show_source_loc) ^ ")"
+        N.RoleName.user r ^ "(" ^ (N.RoleName.where r |> Loc.show) ^ ")"
       in
       let phi = st.phi in
       String.concat "\n"

@@ -2,7 +2,7 @@
 
 open Syntax
 module G = Nuscrlib.Gtype
-module N = Nuscrlib.Names
+module N = Names
 
 (* utilities *)
 

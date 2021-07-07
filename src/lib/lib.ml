@@ -106,15 +106,15 @@ let interact () =
             || Filename.extension fn = ".scr"
           then
             try
-              let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+              let scr = Nuscrlib.parse fn (Stdlib.open_in fn) in
               let protocol_names =
-                List.map fst @@ Nuscrlib.Lib.enumerate scr |> Util.uniq
+                List.map fst @@ Nuscrlib.enumerate scr |> Util.uniq
               in
               let gtypes =
                 let scr_to_net proto =
                   match
                     Result.bind
-                      ( Nuscrlib.Lib.get_global_type scr ~protocol:proto
+                      ( Nuscrlib.get_global_type scr ~protocol:proto
                       |> Wf.wf )
                       Global.net_of_global_type
                   with
@@ -224,15 +224,15 @@ let convert (fmt_in : fmt) (fmt_out : fmt) fn =
         | Error err -> failwith err )
     | Nuscr -> (
       try
-        let scr = Nuscrlib.Lib.parse fn (Stdlib.open_in fn) in
+        let scr = Nuscrlib.parse fn (Stdlib.open_in fn) in
         let protocol_names =
-          List.map fst @@ Nuscrlib.Lib.enumerate scr |> Util.uniq
+          List.map fst @@ Nuscrlib.enumerate scr |> Util.uniq
         in
         let gtypes =
           let scr_to_net proto =
             match
               Result.bind
-                (Nuscrlib.Lib.get_global_type scr ~protocol:proto |> Wf.wf)
+                (Nuscrlib.get_global_type scr ~protocol:proto |> Wf.wf)
                 Global.net_of_global_type
             with
             | Ok net -> net

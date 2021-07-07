@@ -1,6 +1,6 @@
 (library
  (name pedrolib)
- (libraries ocamlgraph sexplib nuscr.lib))
+ (libraries ocamlgraph sexplib nuscr.lib nuscr.utils))
 
 (ocamllex
  (modules lexer))
