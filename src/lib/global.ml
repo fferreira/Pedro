@@ -1,12 +1,12 @@
 (* this module generates a petri net representation from the global type *)
 
 open Syntax
+module N = Nuscrlib.Names
 module G = Nuscrlib.Gtype
-module N = Names
 
 (* utilities *)
 
-let rec participants (n : G.t) : N.RoleName.t list =
+let rec participants (n : G.t) =
   let uc = Util.uniq_cons in
   match n with
   | G.MessageG (_, src, dst, cont) -> uc src @@ uc dst @@ participants cont
@@ -21,9 +21,10 @@ let rec participants (n : G.t) : N.RoleName.t list =
   | G.EndG -> []
   | G.CallG (src, _, roles, cont) ->
       uc src (Util.uniq @@ roles @ participants cont)
-  | G.ParG conts ->
-      (* TODO potential perforamnce problem *)
-      Util.uniq @@ List.concat_map participants conts
+(* | G.ParG conts ->
+ *     (* TODO potential perforamnce problem *)
+ *     Util.uniq @@ List.concat_map participants conts 
+ *)
 
 (* monadic state *)
 type state =
@@ -94,7 +95,7 @@ module Translation = struct
     | n ->
         let* nm = gen_sym in
         let* nms = gen_sym_n (n - 1) in
-        return @@ nm :: nms
+        return @@ (nm :: nms)
 
   (* looks up a role in gamma *)
   let lookup_gamma (r : N.RoleName.t) : name option t =
@@ -189,9 +190,8 @@ module Translation = struct
 
   (* updates delta with information about potential new participants *)
   let recursion_update (r : N.RoleName.t) (p : name) : unit t =
-    let add_to_gamma_if_not_there  (r : N.RoleName.t) gamma =
-      if List.exists (fun (r', _) -> N.RoleName.equal r r')  gamma
-      then gamma
+    let add_to_gamma_if_not_there (r : N.RoleName.t) gamma =
+      if List.exists (fun (r', _) -> N.RoleName.equal r r') gamma then gamma
       else (r, p) :: gamma
     in
     let* st = get in
@@ -213,7 +213,8 @@ module Translation = struct
         transitions= (nm, Silent) :: n.transitions
       ; arcs=
           (src, nm, PlaceToTransition, [tkn])
-          :: (nm, dst, TransitionToPlace, [tkn]) :: n.arcs }
+          :: (nm, dst, TransitionToPlace, [tkn])
+          :: n.arcs }
     in
     set_net net
 
@@ -236,11 +237,10 @@ module Translation = struct
           (msg.tr_send, Labelled) :: (msg.tr_recv, Labelled) :: n.transitions
       ; arcs=
           (msg.p1, msg.tr_send, PlaceToTransition, [msg.r_from])
-          ::
-          (msg.tr_send, p2, TransitionToPlace, [msg.r_from; msg.label])
-          ::
-          (p2, msg.tr_recv, PlaceToTransition, [msg.r_to; msg.label])
-          :: (msg.tr_recv, p3, TransitionToPlace, [msg.r_to]) :: n.arcs }
+          :: (msg.tr_send, p2, TransitionToPlace, [msg.r_from; msg.label])
+          :: (p2, msg.tr_recv, PlaceToTransition, [msg.r_to; msg.label])
+          :: (msg.tr_recv, p3, TransitionToPlace, [msg.r_to])
+          :: n.arcs }
     in
     let* _ = set_net net in
     return (p2, p3)
@@ -258,7 +258,7 @@ module Translation = struct
       let net =
         { n with
           transitions= (trn, Silent) :: n.transitions
-        ; arcs= (p, trn, PlaceToTransition, [rn]) :: trs_split @ n.arcs }
+        ; arcs= ((p, trn, PlaceToTransition, [rn]) :: trs_split) @ n.arcs }
       in
       set_net net
     in
@@ -347,7 +347,8 @@ module Monadic = struct
           return true
   (* brought the token *)
 
-  (* bring a participant to a place (or add it if it's new) and update gamma *)
+  (* bring a participant to a place (or add it if it's new) and update
+     gamma *)
   let bring_or_create (part : N.RoleName.t) (pl : name) : unit t =
     let* part_exists = bring part pl in
     let* _ = update_gamma part pl in
@@ -397,10 +398,9 @@ module Monadic = struct
         let* _ = update_delta x (List.map (fun p -> (p, pl)) parts) in
         translate cont
     | G.MuG (x, _, cont) ->
-       let* gamma = get_gamma in
-       let* _ = update_delta x gamma in
-       translate cont
-
+        let* gamma = get_gamma in
+        let* _ = update_delta x gamma in
+        translate cont
     | G.TVarG (_, exprs, _) when not (Util.is_empty exprs) ->
         fail "Unsupported: TVarG cannot have refinements."
     | G.TVarG (x, _, _) ->
@@ -451,23 +451,24 @@ module Monadic = struct
         fail
           "Unsopported: cannot call sub protocols. (In the future we could \
            inline them)"
-    | G.ParG conts ->
-        let rs =
-          Util.uniq_eq N.RoleName.( = ) @@ List.concat_map participants conts
-        in
-        let* rnms = map tkr rs in
-        let n = List.length conts in
-        let* p = lookup_gamma_or_create (List.hd rs) in
-        (* create the net to split *)
-        let* ps = create_par p rnms n in
-        (* bring the participants *)
-        let* _ = map (fun r -> bring_or_create r p) rs in
-        let for_each_cont (p', c) =
-          let* _ = update_gamma_n rs p' in
-          translate c
-        in
-        let* _ = map for_each_cont @@ List.combine ps conts in
-        return ()
+  (* | G.ParG conts ->
+   *     let rs =
+   *       Util.uniq_eq N.RoleName.( = ) @@ List.concat_map participants conts
+   *     in
+   *     let* rnms = map tkr rs in
+   *     let n = List.length conts in
+   *     let* p = lookup_gamma_or_create (List.hd rs) in
+   *     (* create the net to split *)
+   *     let* ps = create_par p rnms n in
+   *     (* bring the participants *)
+   *     let* _ = map (fun r -> bring_or_create r p) rs in
+   *     let for_each_cont (p', c) =
+   *       let* _ = update_gamma_n rs p' in
+   *       translate c
+   *     in
+   *     let* _ = map for_each_cont @@ List.combine ps conts in
+   *     return ()
+   *)
 end
 
 let net_of_global_type n =

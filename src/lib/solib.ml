@@ -7,7 +7,7 @@ let pn : Syntax.net ref = ref Syntax.empty_net
 let import_nuscr_file (fn : string) (proto_name : string) : string option =
   try
     let scr = Nuscrlib.parse fn (Stdlib.open_in fn) in
-    let proto = Names.ProtocolName.of_string proto_name in
+    let proto = Nuscrlib.Names.ProtocolName.of_string proto_name in
     let gtype = Nuscrlib.get_global_type scr ~protocol:proto in
     match Result.bind (Wf.wf gtype) Global.net_of_global_type with
     | Ok pn' ->

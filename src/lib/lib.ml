@@ -54,7 +54,6 @@ type cmd =
 let interact () =
   let prots = ref [("default", Syntax.empty_net)] in
   let current : string ref = ref "default" in
-
   let clear () =
     prots := [("default", Syntax.empty_net)] ;
     current := "default"
@@ -90,7 +89,9 @@ let interact () =
       | Empty, _ -> Ok ("", false)
       | Exit, _ -> Ok ("Bye!", true)
       | Pwd, _ -> Ok (Sys.getcwd (), false)
-      | Clear, _ -> clear() ; Ok ("Cleared state", false)
+      | Clear, _ ->
+          clear () ;
+          Ok ("Cleared state", false)
       | Load, "" -> Error "Load command with wrong number of parameters"
       | Load, fn ->
           if Filename.extension fn = ".pdr" then
@@ -114,8 +115,7 @@ let interact () =
                 let scr_to_net proto =
                   match
                     Result.bind
-                      ( Nuscrlib.get_global_type scr ~protocol:proto
-                      |> Wf.wf )
+                      (Nuscrlib.get_global_type scr ~protocol:proto |> Wf.wf)
                       Global.net_of_global_type
                   with
                   | Ok net -> net

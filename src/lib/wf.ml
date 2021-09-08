@@ -1,5 +1,6 @@
 module G = Nuscrlib.Gtype
-module N = Names
+module N = Nuscrlib.Names
+module Loc = Nuscrlib.Loc
 
 type state =
   { delta: N.TypeVariableName.t list (* ungarded recursion variables *)
@@ -80,10 +81,12 @@ module WellFormed = struct
       let phi = st.phi in
       String.concat "\n"
       @@ List.map
-           (fun (r, rs) -> if not @@ Util.is_empty rs then (
-             "Choice by role: " ^ role_with_pos r ^ " is not informed to: "
-             ^ String.concat ", "
-             @@ List.map N.RoleName.user rs) else "")
+           (fun (r, rs) ->
+             if not @@ Util.is_empty rs then
+               "Choice by role: " ^ role_with_pos r ^ " is not informed to: "
+               ^ String.concat ", "
+               @@ List.map N.RoleName.user rs
+             else "" )
            phi
     in
     if List.for_all (fun (_, rs) -> Util.is_empty rs) st.phi then return ()
@@ -143,15 +146,16 @@ module Monadic = struct
     | G.EndG -> return ()
     | G.CallG (_src, _, _roles, _cont) ->
         fail "Calling sub protocols is not yet supported."
-    | G.ParG conts ->
-        let* st = get in
-        let validate_branch g =
-          let* _ = forget_recursion in
-          let* _ = wf g in
-          set st
-        in
-        let* _ = map validate_branch conts in
-        return ()
+  (* | G.ParG conts ->
+   *     let* st = get in
+   *     let validate_branch g =
+   *       let* _ = forget_recursion in
+   *       let* _ = wf g in
+   *       set st
+   *     in
+   *     let* _ = map validate_branch conts in
+   *     return ()
+   *)
 end
 
 let wf g =
