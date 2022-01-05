@@ -2,6 +2,8 @@
 
 let pn : Syntax.net ref = ref Syntax.empty_net
 
+let roles : Nuscrlib.Names.RoleName.t list ref = ref []
+
 (* External API *)
 
 let import_nuscr_file (fn : string) (proto_name : string) : string option =
@@ -9,6 +11,7 @@ let import_nuscr_file (fn : string) (proto_name : string) : string option =
     let scr = Nuscrlib.parse fn (Stdlib.open_in fn) in
     let proto = Nuscrlib.Names.ProtocolName.of_string proto_name in
     let gtype = Nuscrlib.get_global_type scr ~protocol:proto in
+    roles := Global.participants gtype ;
     match Result.bind (Wf.wf gtype) Global.net_of_global_type with
     | Ok pn' ->
         pn := pn' ;
@@ -48,5 +51,7 @@ let do_transition (tr : string) : bool =
 let has_finished () : bool =
   let final_set = Opsem.get_markings_by_tag "final" !pn in
   List.exists (Opsem.net_matches_marking !pn) final_set
+
+let get_all_roles () = List.map Nuscrlib.Names.RoleName.user !roles
 
 include Version

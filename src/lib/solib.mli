@@ -19,6 +19,11 @@ val do_transition : string -> bool
 (* says if the net is in a final state *)
 val has_finished : unit -> bool
 
+(* gets a list of all roles *)
+(* TODO: it would be more useful if we can get all _remaining_ roles, but this
+ * is sufficient for now *)
+val get_all_roles : unit -> string list
+
 (* Hash of the commit, used to validate API compatibility when interfacing
  * with Go *)
 val commit_hash : string
